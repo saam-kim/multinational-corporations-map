@@ -83,3 +83,25 @@ button { font: inherit; }
   .active-hub-badge { right: 10px; top: 58px; max-width: 180px; }
   .presentation-mode .workspace { display: block; min-height: auto; }
 }
+
+/* 추론 중심 Why here 흐름 */
+.clue-guide { margin: -2px 0 10px; color: #66766f; font-size: 10px; line-height: 1.55; }
+.clue-list { display: grid; gap: 8px; }
+.clue-card { padding: 11px 12px; border: 1px solid #d9e0dc; border-left: 3px solid #e4a146; background: #fffdf8; }
+.clue-card span,.clue-card strong { display: block; }
+.clue-card span { color: #ad6b17; font: 800 8px var(--font-space); letter-spacing: .09em; }
+.clue-card strong { margin-top: 5px; color: #354941; font-size: 10px; line-height: 1.5; }
+.inference-box { margin-top: 12px; padding: 13px; border: 1px solid #bcd4c9; background: #edf6f1; }
+.inference-box label { display: flex; align-items: center; gap: 6px; color: #0f5c4d; font-size: 11px; font-weight: 900; }
+.inference-box label svg { width: 15px; }
+.inference-box>p { margin: 7px 0 9px; color: #486258; font-size: 10px; line-height: 1.55; }
+.inference-box textarea { width: 100%; resize: vertical; min-height: 70px; padding: 9px 10px; border: 1px solid #b9c9c1; border-radius: 3px; outline: none; background: #fff; color: #253a32; font-size: 10px; line-height: 1.55; }
+.inference-box textarea:focus { border-color: #0f5c4d; box-shadow: 0 0 0 3px #0f5c4d18; }
+.inference-box>div { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.inference-box>div>span { color: #6b7d75; font-size: 8px; line-height: 1.4; }
+.inference-box button { flex: 0 0 auto; height: 32px; padding: 0 10px; font-size: 9px; }
+.evidence-reveal { margin-top: 12px; animation: reveal-evidence .24s ease-out; }
+.evidence-title { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #0f5c4d; font-size: 11px; font-weight: 900; }
+.evidence-title svg { width: 15px; }
+.evidence-reveal .textbook-point { margin-top: 9px; }
+@keyframes reveal-evidence { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }

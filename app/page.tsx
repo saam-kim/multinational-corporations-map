@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, Building2, Check, ChevronRight, Factory, FlaskConical, Globe2, GraduationCap, Maximize2, Minimize2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
+import { ArrowRight, BookOpen, Building2, Check, ChevronRight, Factory, FlaskConical, Globe2, GraduationCap, Lightbulb, Maximize2, Minimize2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress, ProgressLabel, ProgressValue } from '@/components/ui/progress';
@@ -46,6 +46,8 @@ export default function Home() {
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const [presentationMode, setPresentationMode] = useState(false);
+  const [inference, setInference] = useState('');
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -55,7 +57,8 @@ export default function Home() {
 
   const pinPoints = useMemo(() => [{ id: `${company.id}-hq`, name: company.headquarters.city, type: 'hq', typeLabel: '본사 · 의사결정', ...project(company.headquarters.lat, company.headquarters.lng) }, ...hubs.map((item) => ({ ...item, ...project(item.lat, item.lng) }))], [company, hubs]);
 
-  function selectCompany(id: string) { const next = companies.find((item) => item.id === id) ?? companies[0]; setCompanyId(id); setHubId(next.hubs[0].id); }
+  function selectHub(id: string) { setHubId(id); setInference(''); setEvidenceOpen(false); }
+  function selectCompany(id: string) { const next = companies.find((item) => item.id === id) ?? companies[0]; setCompanyId(id); selectHub(next.hubs[0].id); }
   function submitAnswer(optionIndex: number) { if (answer !== null || finished) return; setAnswer(optionIndex); if (optionIndex === quiz.answerIndex) setScore((value) => value + 1); }
   function nextQuestion() { setQuestionIndex((value) => value + 1); setAnswer(null); }
   function restartQuiz() { setQuestionIndex(0); setAnswer(null); setScore(0); }
@@ -104,21 +107,28 @@ export default function Home() {
               <g className="route-layer" aria-hidden="true">
                 {hubs.map((item) => <path key={item.id} d={routePath(company.headquarters, item)} className={`supply-route ${item.id === hub.id ? 'active' : ''}`} />)}
               </g>
-              {pinPoints.map((point) => { const active = point.id === hub.id; const isHq = point.type === 'hq'; return <g key={point.id} className={`map-pin ${active ? 'active' : ''} ${isHq ? 'hq' : ''}`} transform={`translate(${point.x} ${point.y})`} onClick={() => !isHq && setHubId(point.id)} role="button" tabIndex={isHq ? -1 : 0} aria-label={`${point.name}, ${point.typeLabel}`} onKeyDown={(event) => { if (!isHq && (event.key === 'Enter' || event.key === ' ')) setHubId(point.id); }}>{active && <circle r="19" className="pin-pulse" />}<circle r={isHq ? 8 : 6.5} fill={isHq ? '#111827' : hubMeta[point.type]?.color ?? '#2563eb'} /><circle r={isHq ? 3 : 2.4} fill="white" />{(active || isHq) && <text x="12" y="4">{isHq ? 'HQ' : point.name}</text>}</g>; })}
+              {pinPoints.map((point) => { const active = point.id === hub.id; const isHq = point.type === 'hq'; return <g key={point.id} className={`map-pin ${active ? 'active' : ''} ${isHq ? 'hq' : ''}`} transform={`translate(${point.x} ${point.y})`} onClick={() => !isHq && selectHub(point.id)} role="button" tabIndex={isHq ? -1 : 0} aria-label={`${point.name}, ${point.typeLabel}`} onKeyDown={(event) => { if (!isHq && (event.key === 'Enter' || event.key === ' ')) selectHub(point.id); }}>{active && <circle r="19" className="pin-pulse" />}<circle r={isHq ? 8 : 6.5} fill={isHq ? '#111827' : hubMeta[point.type]?.color ?? '#2563eb'} /><circle r={isHq ? 3 : 2.4} fill="white" />{(active || isHq) && <text x="12" y="4">{isHq ? 'HQ' : point.name}</text>}</g>; })}
             </svg>
             <div className="active-hub-badge"><span>{hub.country}</span><strong>{hub.name}</strong></div>
             <div className="map-source">NATURAL EARTH · 50m · {countryFeatures.length}개 국가·지역 경계</div>
             <div className="map-legend"><span><i className="legend-hq" /> 본사</span><span><i className="legend-rd" /> R&D</span><span><i className="legend-assembly" /> 조립·생산</span><span><i className="legend-resource" /> 첨단부품·자원</span></div>
-            <div className="hub-dock" role="list" aria-label="글로벌 거점 목록">{hubs.map((item, index) => { const meta = hubMeta[item.type] ?? hubMeta.trade; const Icon = meta.icon; return <button key={item.id} role="listitem" className={`hub-chip ${item.id === hub.id ? 'active' : ''}`} onClick={() => setHubId(item.id)}><span className="hub-number">{String(index + 1).padStart(2, '0')}</span><span className="hub-role" style={{ color: meta.color }}><Icon /> {meta.label}</span><strong>{item.name}</strong></button>; })}</div>
+            <div className="hub-dock" role="list" aria-label="글로벌 거점 목록">{hubs.map((item, index) => { const meta = hubMeta[item.type] ?? hubMeta.trade; const Icon = meta.icon; return <button key={item.id} role="listitem" className={`hub-chip ${item.id === hub.id ? 'active' : ''}`} onClick={() => selectHub(item.id)}><span className="hub-number">{String(index + 1).padStart(2, '0')}</span><span className="hub-role" style={{ color: meta.color }}><Icon /> {meta.label}</span><strong>{item.name}</strong></button>; })}</div>
           </div>
         </section>
 
         <aside className="detail-panel">
           <div className="detail-topline"><span style={{ color: hubMeta[hub.type]?.color ?? '#2563eb' }}>{hubMeta[hub.type]?.label ?? hub.typeLabel}</span><span>{hub.country}</span></div><h2>{hub.name}</h2><p className="hub-summary">{hub.summary}</p>
-          <div className="why-heading"><span>WHY HERE?</span><strong>왜 이 지역일까</strong></div>
-          <div className="reason-list">{hub.reasons.map((reason, index) => <article key={reason.title} className="reason-card"><span>0{index + 1}</span><div><strong>{reason.title}</strong><p>{reason.detail}</p></div></article>)}</div>
-          <div className="textbook-point"><div><GraduationCap /><span>교과서 개념 연결</span></div><p>{hub.textbookPoint}</p></div>
-          <Button className="next-hub" onClick={() => { const index = hubs.findIndex((item) => item.id === hub.id); setHubId(hubs[(index + 1) % hubs.length].id); }}>다음 거점 탐색 <ArrowRight /></Button>
+          <div className="why-heading"><span>REGIONAL CLUES</span><strong>지역 단서 수집</strong></div>
+          <p className="clue-guide">아래 특징을 읽고, 이 기업이 왜 이곳에 거점을 두었는지 먼저 추론해 보세요.</p>
+          <div className="clue-list">{hub.reasons.map((reason, index) => <article key={reason.title} className="clue-card"><span>단서 {String(index + 1).padStart(2, '0')}</span><strong>{reason.title}</strong></article>)}</div>
+          <div className="inference-box">
+            <label htmlFor="inference"><Lightbulb /> 나의 입지 추론</label>
+            <p>이 지역의 특징이 {company.name}의 {hubMeta[hub.type]?.label ?? hub.typeLabel} 활동에 어떤 이점을 줄까요?</p>
+            <textarea id="inference" value={inference} onChange={(event) => { setInference(event.target.value); setEvidenceOpen(false); }} placeholder="예: ○○가 풍부해 △△ 비용을 낮추고…" rows={3} />
+            <div><span>{inference.trim().length < 8 ? '8자 이상 생각을 적어 보세요' : '좋아요. 이제 근거와 비교해 보세요.'}</span><Button disabled={inference.trim().length < 8} onClick={() => setEvidenceOpen(true)}>근거 확인 <ArrowRight /></Button></div>
+          </div>
+          {evidenceOpen && <div className="evidence-reveal" aria-live="polite"><div className="evidence-title"><Check /><span>근거와 비교하기</span></div><div className="reason-list">{hub.reasons.map((reason, index) => <article key={reason.title} className="reason-card"><span>0{index + 1}</span><div><strong>{reason.title}</strong><p>{reason.detail}</p></div></article>)}</div><div className="textbook-point"><div><GraduationCap /><span>교과서 개념 연결</span></div><p>{hub.textbookPoint}</p></div></div>}
+          <Button variant={evidenceOpen ? 'default' : 'outline'} className="next-hub" onClick={() => { const index = hubs.findIndex((item) => item.id === hub.id); selectHub(hubs[(index + 1) % hubs.length].id); }}>{evidenceOpen ? '다음 거점 탐색' : '다른 거점 먼저 보기'} <ArrowRight /></Button>
         </aside>
       </section>
 
