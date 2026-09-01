@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, Building2, Check, ChevronRight, Factory, FlaskConical, Globe2, GraduationCap, Maximize2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
+import { ArrowRight, BookOpen, Building2, Check, ChevronRight, Factory, FlaskConical, Globe2, GraduationCap, Maximize2, Minimize2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress, ProgressLabel, ProgressValue } from '@/components/ui/progress';
 import { companies, locationQuizzes } from '@/lib/companies';
-import worldAtlas from 'world-atlas/countries-110m.json';
-import { geoEquirectangular, geoGraticule10, geoPath } from 'd3-geo';
+import worldAtlas from 'world-atlas/countries-50m.json';
+import { geoEquirectangular, geoGraticule10, geoInterpolate, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 
 type Hub = { id: string; name: string; country: string; lat: number; lng: number; type: string; typeLabel: string; color: string; summary: string; reasons: { title: string; detail: string }[]; textbookPoint: string };
@@ -23,6 +23,15 @@ const hubMeta: Record<string, { label: string; icon: typeof Factory; color: stri
 
 function project(lat: number, lng: number) { return { x: ((lng + 180) / 360) * 1000, y: ((90 - lat) / 180) * 500 }; }
 
+function routePath(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {
+  const interpolate = geoInterpolate([from.lng, from.lat], [to.lng, to.lat]);
+  return Array.from({ length: 33 }, (_, index) => {
+    const point = interpolate(index / 32);
+    const projected = mapProjection(point);
+    return projected ? `${index ? 'L' : 'M'}${projected[0].toFixed(1)},${projected[1].toFixed(1)}` : '';
+  }).join(' ');
+}
+
 const mapProjection = geoEquirectangular().scale(159.154943).translate([500, 250]);
 const mapPath = geoPath(mapProjection);
 const countryFeatures = (feature(worldAtlas as never, worldAtlas.objects.countries as never) as unknown as { features: Array<{ id?: string | number; properties?: { name?: string } }> }).features;
@@ -36,6 +45,7 @@ export default function Home() {
   const hub = hubs.find((item) => item.id === hubId) ?? hubs[0];
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
+  const [presentationMode, setPresentationMode] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -49,13 +59,20 @@ export default function Home() {
   function submitAnswer(optionIndex: number) { if (answer !== null || finished) return; setAnswer(optionIndex); if (optionIndex === quiz.answerIndex) setScore((value) => value + 1); }
   function nextQuestion() { setQuestionIndex((value) => value + 1); setAnswer(null); }
   function restartQuiz() { setQuestionIndex(0); setAnswer(null); setScore(0); }
-  async function toggleFullscreen() { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); }
+  async function togglePresentation() {
+    const next = !presentationMode;
+    setPresentationMode(next);
+    try {
+      if (next && !document.fullscreenElement) await document.documentElement.requestFullscreen();
+      if (!next && document.fullscreenElement) await document.exitFullscreen();
+    } catch { /* 브라우저가 전체 화면을 막아도 발표용 레이아웃은 유지합니다. */ }
+  }
 
   return (
-    <main className="learning-shell">
+    <main className={`learning-shell ${presentationMode ? 'presentation-mode' : ''}`}>
       <header className="topbar">
         <div className="brand-lockup"><div className="brand-mark"><Globe2 /></div><div><div className="brand-title">GLOBAL SHIFT</div><div className="brand-subtitle">다국적 기업의 공간적 분업</div></div></div>
-        <div className="topbar-actions"><span className="course-badge"><GraduationCap /> 통합사회 II</span><Button variant="outline" className="header-button" onClick={toggleFullscreen}><Maximize2 /> 발표 화면</Button><Button className="quiz-button" onClick={() => setQuizOpen(true)}><Trophy /> 10문제 도전</Button></div>
+        <div className="topbar-actions"><span className="course-badge"><GraduationCap /> 통합사회 II</span><Button variant="outline" className="header-button" onClick={togglePresentation}>{presentationMode ? <Minimize2 /> : <Maximize2 />} {presentationMode ? '발표 종료' : '발표 화면'}</Button><Button className="quiz-button" onClick={() => setQuizOpen(true)}><Trophy /> {locationQuizzes.length}문제 도전</Button></div>
       </header>
 
       <section className="company-strip" aria-label="기업 선택">
@@ -76,7 +93,7 @@ export default function Home() {
         </aside>
 
         <section className="map-stage" aria-label={`${company.name} 글로벌 거점 지도`}>
-          <div className="map-heading"><div><span>GLOBAL FOOTPRINT</span><h2>{company.name}의 가치사슬은 어디에 놓여 있을까?</h2></div><div className="map-count"><strong>{hubs.length + 1}</strong><span>글로벌 핵심 거점</span></div></div>
+          <div className="map-heading"><div><span>GLOBAL FOOTPRINT</span><h2>{company.name}의 가치사슬은 어디에 놓여 있을까?</h2><div className="learning-steps" aria-label="학습 순서"><span className="done">1 기업 선택</span><i /><span className="active">2 거점 탐색</span><i /><span>3 입지 이유</span><i /><span>4 퀴즈</span></div></div><div className="map-count"><strong>{hubs.length + 1}</strong><span>글로벌 핵심 거점</span></div></div>
           <div className="map-canvas"><div className="map-grid" />
             <svg viewBox="0 0 1000 500" className="world-map" role="img" aria-label="국가별 경계가 표시된 세계 지도">
               <defs><filter id="land-shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#25443a" floodOpacity=".18" /></filter></defs>
@@ -84,9 +101,13 @@ export default function Home() {
               <g className="country-layer" filter="url(#land-shadow)">
                 {countryFeatures.map((country, index) => <path key={country.id ?? index} d={mapPath(country as never) ?? undefined} className={`country-shape country-tone-${index % 4}`}><title>{country.properties?.name ?? '국가'}</title></path>)}
               </g>
+              <g className="route-layer" aria-hidden="true">
+                {hubs.map((item) => <path key={item.id} d={routePath(company.headquarters, item)} className={`supply-route ${item.id === hub.id ? 'active' : ''}`} />)}
+              </g>
               {pinPoints.map((point) => { const active = point.id === hub.id; const isHq = point.type === 'hq'; return <g key={point.id} className={`map-pin ${active ? 'active' : ''} ${isHq ? 'hq' : ''}`} transform={`translate(${point.x} ${point.y})`} onClick={() => !isHq && setHubId(point.id)} role="button" tabIndex={isHq ? -1 : 0} aria-label={`${point.name}, ${point.typeLabel}`} onKeyDown={(event) => { if (!isHq && (event.key === 'Enter' || event.key === ' ')) setHubId(point.id); }}>{active && <circle r="19" className="pin-pulse" />}<circle r={isHq ? 8 : 6.5} fill={isHq ? '#111827' : hubMeta[point.type]?.color ?? '#2563eb'} /><circle r={isHq ? 3 : 2.4} fill="white" />{(active || isHq) && <text x="12" y="4">{isHq ? 'HQ' : point.name}</text>}</g>; })}
             </svg>
-            <div className="map-source">NATURAL EARTH · 110m 국가 경계</div>
+            <div className="active-hub-badge"><span>{hub.country}</span><strong>{hub.name}</strong></div>
+            <div className="map-source">NATURAL EARTH · 50m · {countryFeatures.length}개 국가·지역 경계</div>
             <div className="map-legend"><span><i className="legend-hq" /> 본사</span><span><i className="legend-rd" /> R&D</span><span><i className="legend-assembly" /> 조립·생산</span><span><i className="legend-resource" /> 첨단부품·자원</span></div>
             <div className="hub-dock" role="list" aria-label="글로벌 거점 목록">{hubs.map((item, index) => { const meta = hubMeta[item.type] ?? hubMeta.trade; const Icon = meta.icon; return <button key={item.id} role="listitem" className={`hub-chip ${item.id === hub.id ? 'active' : ''}`} onClick={() => setHubId(item.id)}><span className="hub-number">{String(index + 1).padStart(2, '0')}</span><span className="hub-role" style={{ color: meta.color }}><Icon /> {meta.label}</span><strong>{item.name}</strong></button>; })}</div>
           </div>

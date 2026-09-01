@@ -49,3 +49,37 @@ button { font: inherit; }
 
 @media (max-width: 1160px) { .workspace { grid-template-columns: 230px minmax(450px,1fr); max-height: none; }.detail-panel { grid-column: 1 / -1; display: grid; grid-template-columns: 220px 1fr 250px; gap: 18px; border-left: 0; border-top: 1px solid #d9dfda; }.detail-panel .detail-topline,.detail-panel h2,.detail-panel .hub-summary { grid-column: 1; }.detail-panel .why-heading,.detail-panel .reason-list { grid-column: 2; }.detail-panel .textbook-point,.detail-panel .next-hub { grid-column: 3; }.detail-panel .why-heading { grid-row: 1; }.detail-panel .reason-list { grid-row: 2 / span 4; }.detail-panel .textbook-point { grid-row: 1 / span 2; }.detail-panel .next-hub { grid-row: 3; align-self: end; }.concept-footer { flex-wrap: wrap; }.concept-flow { margin-left: auto; } }
 @media (max-width: 800px) { .topbar { padding: 0 14px; }.brand-subtitle,.course-badge,.header-button { display: none; }.company-strip { grid-template-columns: 1fr; }.strip-intro { display: none; }.company-tabs { grid-template-columns: repeat(7,130px); }.workspace { display: block; }.company-panel { border-right: 0; border-bottom: 1px solid #d9dfda; }.strategy-copy { -webkit-line-clamp: 3; }.map-heading { padding: 14px; }.map-heading h2 { font-size: 14px; }.map-count { display: none; }.map-canvas { min-height: 510px; }.world-map { top: 10%; height: 60%; }.detail-panel { display: block; }.detail-panel>* { grid-column: auto!important; grid-row: auto!important; }.concept-footer { display: block; }.concept-footer>p { margin: 8px 0 12px; }.concept-flow { overflow-x: auto; }.overview-stats { grid-template-columns: 1fr; }.overview-stats>div { border-right: 0; border-bottom: 1px solid #dbe1dd; }.feature-grid { grid-template-columns: 1fr; } }
+
+/* 지도·수업 UX 개선 */
+.map-heading { min-height: 96px; padding-top: 14px; padding-bottom: 14px; }
+.learning-steps { display: flex; align-items: center; gap: 7px; margin-top: 9px; }
+.learning-steps span { color: #7b8982; font-size: 8px; font-weight: 800; white-space: nowrap; }
+.learning-steps span.done { color: #547067; }
+.learning-steps span.active { padding: 3px 7px; border-radius: 999px; background: #dcebe4; color: #0f5c4d; }
+.learning-steps i { width: 14px; height: 1px; background: #c0ccc5; }
+.supply-route { fill: none; stroke: #4d7466!important; stroke-width: 1.1!important; stroke-dasharray: 4 4; opacity: .34; vector-effect: non-scaling-stroke; }
+.supply-route.active { stroke: #df8818!important; stroke-width: 2.6!important; stroke-dasharray: none; opacity: .95; filter: drop-shadow(0 2px 3px #89500b55); }
+.pin-pulse { fill: #f0a33a33; stroke: #e68f20; stroke-width: 1.5; }
+.map-legend { background: #f8faf6f2; border-color: #bfcfc5; box-shadow: 0 6px 20px #27443812; }
+.map-legend span { color: #42564e; font-weight: 800; }
+.active-hub-badge { position: absolute; z-index: 2; right: 20px; top: 18px; max-width: 245px; padding: 8px 11px; border: 1px solid #dfb16d; border-left: 3px solid #e59125; background: #fffbf2f2; box-shadow: 0 6px 20px #5d411817; text-align: right; }
+.active-hub-badge span,.active-hub-badge strong { display: block; }
+.active-hub-badge span { color: #a36718; font-size: 8px; font-weight: 900; }
+.active-hub-badge strong { margin-top: 2px; font-size: 10px; line-height: 1.35; }
+.hub-dock { scrollbar-width: thin; scrollbar-color: #789186 transparent; }
+.country-shape { stroke: #f9fbf9!important; stroke-width: 1!important; }
+.country-tone-0 { fill: #91aca0; }.country-tone-1 { fill: #a4bbb0; }.country-tone-2 { fill: #86a397; }.country-tone-3 { fill: #b4c7be; }
+.country-shape:hover { fill: #6f9283; stroke-width: 1.35!important; }
+.map-source { padding: 4px 6px; background: #edf3efcf; color: #4f655c; letter-spacing: .06em; }
+.quiz-dialog { border: 1px solid #cbd6cf; border-radius: 6px; background: #fff; box-shadow: 0 28px 90px #10281f66; }
+.presentation-mode .company-strip,.presentation-mode .company-panel,.presentation-mode .concept-footer { display: none; }
+.presentation-mode .workspace { grid-template-columns: minmax(720px,1fr) 360px; max-height: calc(100vh - 72px); min-height: calc(100vh - 72px); }
+.presentation-mode .map-canvas { min-height: calc(100vh - 168px); }
+.presentation-mode .world-map { inset: 1% 1% auto; width: 98%; height: 78%; }
+.presentation-mode .detail-panel { font-size: 1.08em; }
+
+@media (max-width: 800px) {
+  .learning-steps { overflow-x: auto; }
+  .active-hub-badge { right: 10px; top: 58px; max-width: 180px; }
+  .presentation-mode .workspace { display: block; min-height: auto; }
+}
