@@ -99,7 +99,7 @@ export default function Home() {
               <defs><filter id="land-shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#25443a" floodOpacity=".18" /></filter></defs>
               <path d={graticulePath} className="map-graticule" />
               <g className="country-layer" filter="url(#land-shadow)">
-                {countryFeatures.map((country, index) => <path key={country.id ?? index} d={mapPath(country as never) ?? undefined} className={`country-shape country-tone-${index % 4}`}><title>{country.properties?.name ?? '국가'}</title></path>)}
+                {countryFeatures.map((country, index) => <path key={`${country.id ?? 'country'}-${index}`} d={mapPath(country as never) ?? undefined} className={`country-shape country-tone-${index % 4}`}><title>{country.properties?.name ?? '국가'}</title></path>)}
               </g>
               <g className="route-layer" aria-hidden="true">
                 {hubs.map((item) => <path key={item.id} d={routePath(company.headquarters, item)} className={`supply-route ${item.id === hub.id ? 'active' : ''}`} />)}
