@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다국적 기업의 공간적 분업 — 고등학교 통합사회 인터랙티브 지도</title>
+  
+  <!-- Pretendard 웹폰트 -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  
+  <!-- Leaflet & D3 CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- 메인 스타일시트 -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- 1. 상단 글로벌 헤더 -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="badge-subject">고등 통합사회</span>
+      <h1 class="header-title">
+        다국적 기업 분석
+        <span class="sub">| 글로벌 공간적 분업 지도</span>
+      </h1>
+    </div>
+
+    <div class="header-controls">
+      <!-- 모드 전환 스위처 -->
+      <div class="mode-switcher">
+        <button class="mode-btn active" id="btn-mode-explore">
+          <span>🌐 자유 탐구 지도</span>
+        </button>
+        <button class="mode-btn" id="btn-mode-quiz">
+          <span>🎯 도전! 입지 퀴즈</span>
+        </button>
+      </div>
+
+      <!-- 전체화면 토글 -->
+      <button class="btn-icon" id="btn-fullscreen" title="수업용 전체화면">
+        <span>⛶ 전체화면</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 대륙별 기업 선택 탭 바 -->
+  <nav class="companies-bar" id="companies-bar">
+    <!-- js/app.js에서 동적 생성 -->
+  </nav>
+
+  <!-- 3. 메인 뷰포트 (표준 세계지도 + 반응형 사이드 패널) -->
+  <main class="main-viewport">
+    
+    <!-- 좌측 표준 세계 지도 뷰어 (Leaflet 고화질 표준 지도) -->
+    <section class="map-container">
+      <div id="world-map" style="width: 100%; height: 100%; position: absolute; top:0; left:0;"></div>
+
+      <!-- 지도 내 플로팅 조작 버튼 -->
+      <div class="map-floating-controls">
+        <button class="map-control-btn" id="btn-zoom-in" title="지도 확대">+</button>
+        <button class="map-control-btn" id="btn-zoom-out" title="지도 축소">-</button>
+        <button class="map-control-btn" id="btn-reset-view" title="원래 크기로">⟲</button>
+      </div>
+
+      <!-- 지도 범례 -->
+      <div class="map-legend">
+        <div class="legend-item">
+          <div class="legend-dot hq"></div>
+          <span>본사 (HQ)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot rd"></div>
+          <span>연구개발 (R&D)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot assembly"></div>
+          <span>완제품 조립 공장</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot fab"></div>
+          <span>첨단 부품 / 광산</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 우측 인터랙티브 사이드 패널 -->
+    <aside class="info-sidebar">
+      
+      <!-- [모드 A] 자유 탐구 패널 -->
+      <div id="sidebar-explore" style="display: flex; flex-direction: column; height: 100%;">
+        
+        <!-- 기업 개요 섹션 -->
+        <div class="sidebar-section">
+          <div class="company-profile-card" id="company-profile-card">
+            <!-- 동적 삽입 -->
+          </div>
+        </div>
+
+        <!-- 글로벌 거점 목록 섹션 -->
+        <div class="sidebar-section">
+          <div class="hubs-card">
+            <div class="section-header-title">
+              <span>📍 공간적 분업 거점 선택</span>
+              <span class="section-sub-tip">지도 핀 또는 목록 클릭</span>
+            </div>
+            <div class="hubs-selector-list" id="hubs-list-container">
+              <!-- 동적 삽입 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 거점별 "왜 이 지역에서 분업할까?" 상세 분석 섹션 -->
+        <div class="sidebar-section" style="flex: 1;">
+          <div id="hub-detail-container">
+            <!-- 동적 삽입 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- [모드 B] 입지 요인 퀴즈 패널 -->
+      <div class="quiz-panel-container" id="sidebar-quiz" style="display: none;">
+        <!-- js/app.js에서 동적 생성 -->
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- 4. 하단 통합사회 핵심 개념 배너 -->
+  <footer class="footer-banner">
+    <div class="banner-summary">
+      <span class="banner-tag">교과서 핵심</span>
+      <span><strong>다국적 기업의 공간적 분업:</strong> 본사(의사결정·본국) &rarr; R&D(인재확보·혁신클러스터) &rarr; 생산(원가절감·개도국 / 시장접근·선진국) &rarr; 판매(세계화)</span>
+    </div>
+    <div style="color: var(--text-muted); font-size: 12px;">
+      💡 마우스 휠로 지도 확대/축소, 드래그로 이동할 수 있습니다.
+    </div>
+  </footer>
+
+  <!-- 5. 다국적 기업 상세 개요 모달 (세종 게리맨더링 리빌드 톤) -->
+  <div id="company-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-card">
+      
+      <!-- 모달 헤더 -->
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-badges">
+            <span class="badge-subject" id="modal-badge-region">아시아 (대한민국)</span>
+            <span class="badge-tag" id="modal-badge-category">전자 · IT · 반도체</span>
+          </div>
+          <h2 class="modal-title" id="modal-company-name">삼성전자</h2>
+          <span class="modal-eng-name" id="modal-company-eng">Samsung Electronics</span>
+        </div>
+        <button class="modal-close-btn" id="btn-close-modal" title="닫기 (ESC)">✕</button>
+      </div>
+
+      <!-- 모달 바디 스크롤 영역 -->
+      <div class="modal-body">
+        
+        <!-- 주요 기업 스펙 그리드 -->
+        <div class="modal-spec-grid">
+          <div class="spec-box">
+            <span class="spec-label">설립 연도</span>
+            <span class="spec-value" id="modal-spec-founded">1969년</span>
+          </div>
+          <div class="spec-box">
+            <span class="spec-label">글로벌 임직원 규모</span>
+            <span class="spec-value" id="modal-spec-scale">74개국 27만여 명</span>
+          </div>
+          <div class="spec-box col-span-2">
+            <span class="spec-label">주력 사업 분야</span>
+            <span class="spec-value" id="modal-spec-business">메모리 반도체, 갤럭시 스마트폰, OLED 디스플레이, 파운드리</span>
+          </div>
+        </div>
+
+        <!-- 공간적 분업 전략 총괄 요약 -->
+        <div class="modal-section">
+          <h3 class="section-heading">🌐 글로벌 공간적 분업 전략 구조</h3>
+          <p class="section-desc" id="modal-spatial-summary">
+            본국(한국)에서 전략 기획과 초격차 R&D를 수행하고, 인건비가 저렴한 개도국(베트남·인도)에 대규모 완제품 조립 공장을 구축하며, 최고급 IT 인재와 주요 고객사가 밀집한 선진국(미국)에 혁신 R&D 및 첨단 파운드리를 배치한 전형적인 공간적 분업 모델입니다.
+          </p>
+        </div>
+
+        <!-- 4대 거점별 역할 인포그래픽 카드 -->
+        <div class="modal-features-grid" id="modal-features-container">
+          <!-- js/app.js에서 동적 생성 -->
+        </div>
+
+        <!-- 교과서 탐구 질문 & 핵심 포인트 -->
+        <div class="modal-curriculum-box">
+          <div class="curriculum-title">
+            <span>💡 통합사회 교과서 탐구 포인트</span>
+          </div>
+          <p class="curriculum-text" id="modal-curriculum-question">
+            왜 삼성전자는 고부가가치 R&D와 의사결정 기능은 한국 본국에 남겨두고, 스마트폰 조립 공장은 베트남과 인도로 이전했을까요?
+          </p>
+        </div>
+
+      </div>
+
+      <!-- 모달 푸터 액션 -->
+      <div class="modal-footer">
+        <span class="modal-footer-tip">지도에서 본사와 거점 핀을 클릭하면 3단계 입지 요인을 탐구할 수 있습니다.</span>
+        <button class="btn-primary" id="btn-modal-explore-now">
+          🗺️ 공간적 분업 거점 탐색하기
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 스크립트 연결 -->
+  <script src="js/companiesData.js"></script>
+  <script src="js/mapRenderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
