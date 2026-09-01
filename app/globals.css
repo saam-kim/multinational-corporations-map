@@ -105,3 +105,40 @@ button { font: inherit; }
 .evidence-title svg { width: 15px; }
 .evidence-reveal .textbook-point { margin-top: 9px; }
 @keyframes reveal-evidence { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.map-pin .pin-hit { fill: transparent!important; stroke: transparent!important; stroke-width: 0!important; pointer-events: all; }
+
+/* 11형 iPad 가로 모드: 지도와 추론을 나란히, 터치 영역은 44px 이상 */
+@media (min-width: 1000px) and (max-width: 1300px) and (orientation: landscape) {
+  .topbar { height: 64px; padding-right: max(18px,env(safe-area-inset-right)); padding-left: max(18px,env(safe-area-inset-left)); }
+  .header-button,.quiz-button { min-height: 44px; }
+  .company-strip { min-height: 82px; grid-template-columns: 1fr; }
+  .strip-intro { display: none; }
+  .company-tabs { grid-template-columns: repeat(7,minmax(0,1fr)); }
+  .company-tab { min-width: 0; min-height: 82px; padding: 10px 8px; gap: 6px; }
+  .company-tab small { display: none; }
+  .workspace { grid-template-columns: minmax(0,1fr) 360px; height: calc(100dvh - 146px); min-height: 0; max-height: none; }
+  .company-panel { display: none; }
+  .map-heading { min-height: 88px; padding: 12px 18px; }
+  .map-heading h2 { font-size: 17px; }
+  .learning-steps span { font-size: 9px; }
+  .map-canvas { min-height: 0; }
+  .world-map { inset: 2% 1% auto; width: 98%; height: 76%; }
+  .map-pin text { font-size: 13px; }
+  .map-legend { left: 14px; top: 14px; }
+  .map-legend span { font-size: 10px; }
+  .active-hub-badge { right: 14px; top: 14px; }
+  .hub-dock { left: 12px; right: 12px; bottom: 10px; gap: 7px; }
+  .hub-chip { min-width: 154px; min-height: 54px; padding: 10px; }
+  .hub-chip strong { font-size: 11px; }
+  .detail-panel { display: block; grid-column: auto; padding: 18px 18px max(22px,env(safe-area-inset-bottom)); border-top: 0; border-left: 1px solid #d9dfda; }
+  .detail-panel h2 { font-size: 23px; }
+  .hub-summary { font-size: 12px; }
+  .clue-guide,.inference-box>p { font-size: 11px; }
+  .clue-card strong,.reason-card strong,.inference-box textarea { font-size: 11px; }
+  .reason-card p,.textbook-point p { font-size: 11px; }
+  .inference-box button,.next-hub { min-height: 44px; }
+  .inference-box button { font-size: 10px; }
+  .next-hub { height: 44px; font-size: 11px; }
+  .concept-footer { display: none; }
+}
