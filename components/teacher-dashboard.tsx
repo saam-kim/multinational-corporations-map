@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { ArrowRight, Check, Clipboard, Clock3, Globe2, MessageSquareText, Pause, Play, Radio, RefreshCw, RotateCcw, Send, Square, Users } from 'lucide-react';
+import { ArrowRight, Check, Clipboard, Clock3, Globe2, Loader2, MessageSquareText, Pause, Play, Radio, RefreshCw, RotateCcw, Send, Square, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { companies } from '@/lib/companies';
 
@@ -69,6 +69,7 @@ export default function TeacherDashboard({ code }: { code: string }) {
   const focusedHub = focusedCompany?.hubs.find((item) => item.id === data?.session.focus_hub);
 
   if (error) return <main className="teacher-error"><Globe2 /><h1>대시보드에 접근할 수 없습니다</h1><p>{error}</p></main>;
+  if (!data) return <main className="teacher-loading"><Loader2 /><strong>수업 현황을 불러오는 중입니다</strong><span>학생 수와 진행 상태를 확인하고 있어요.</span></main>;
 
   return <main className="teacher-shell">
     <header className="teacher-topbar"><div className="brand-lockup"><div className="brand-mark"><Globe2 /></div><div><div className="brand-title">GLOBAL SHIFT</div><div className="brand-subtitle">교사 수업 대시보드</div></div></div><div className={`live-status ${data?.session.status ?? 'waiting'}`}><Radio />{statusText[data?.session.status ?? 'waiting']}</div></header>
