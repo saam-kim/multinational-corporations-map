@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1788450568942,
+      "tag": "0000_goofy_kronos",
+      "breakpoints": true
+    }
+  ]
+}
