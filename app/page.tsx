@@ -178,7 +178,7 @@ export default function Home() {
         </aside>
 
         <section className="map-stage" aria-label={`${company.name} 글로벌 거점 지도`}>
-          <div className="map-heading"><div><span>GLOBAL FOOTPRINT</span><h2>{company.name}의 가치사슬은 어디에 놓여 있을까?</h2><div className="learning-steps" aria-label="학습 순서"><span className="done">1 기업 선택</span><i /><span className="active">2 지역 단서</span><i /><span>3 역할 추론</span><i /><span>4 이유 작성</span></div></div><div className="map-count"><strong>{hubs.length + 1}</strong><span>글로벌 핵심 거점</span></div></div>
+          <div className="map-heading"><div><span>GLOBAL FOOTPRINT</span><h2>{company.name}의 가치사슬은 어디에 놓여 있을까?</h2><div className="learning-steps" aria-label="학습 순서"><span className="done">1 지역 단서</span><i /><span className={!roleCorrect ? 'active' : 'done'}>2 역할 선택</span><i /><span className={roleCorrect ? (evidenceOpen ? 'done' : 'active') : ''}>3 이유 작성</span><i /><span className={evidenceOpen ? 'active' : ''}>4 근거 비교</span></div></div><div className="map-count"><strong>{hubs.length + 1}</strong><span>글로벌 핵심 거점</span></div></div>
           <div className="map-canvas"><div className="map-grid" />
             <svg viewBox="0 0 1000 500" className="world-map" role="img" aria-label="국가별 경계가 표시된 세계 지도">
               <defs><filter id="land-shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#25443a" floodOpacity=".18" /></filter></defs>
