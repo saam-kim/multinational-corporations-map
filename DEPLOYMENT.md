@@ -33,4 +33,6 @@ Client Firestore access is denied. Server APIs authenticate teacher management
 with a hashed bearer key; students receive random participant IDs. Keep teacher
 management links private. Public classroom creation currently has no account
 login/rate limiting; monitor the Firebase free-tier quotas before large classes.
-GitHub's original `main` remains the MVP; deploy this branch, not `main`.
+GitHub's original `main` remains the MVP. Vercel is connected to the GitHub
+repository and tracks `codex/firebase-vercel` for production auto-deployments.
+Pushes to this branch update `https://global-shift-map.vercel.app` automatically.
