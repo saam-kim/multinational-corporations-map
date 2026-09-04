@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+const base = process.env.TEST_BASE_URL || 'http://localhost:3000';
+async function request(path, body, expected=200) {
+  const response = await fetch(base+path, {signal:AbortSignal.timeout(30000), ...(body===undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});
+  assert.equal(response.status,expected, path+' status: '+response.status);
+  const data=await response.json();
+  return data;
+}
+for(let round=1;round<=3;round++){
+  const {code,teacherKey:key}=await request('/api/sessions',{title:'Firebase 검증 '+round});
+  const route='/api/teacher/'+code;
+  await request(route+'?key=wrong',undefined,403);
+  const students=await Promise.all(Array.from({length:5},(_,i)=>request('/api/sessions/'+code+'/join',{name:'검증학생 '+(i+1)})));
+  await request(route,{key,action:'status',status:'active'});
+  const payload={companyId:'samsung',hubId:'samsung-vn',roleGuess:'assembly',roleCorrect:true,inference:'노동력과 항만 접근성이 생산 및 수출 비용을 낮추기 때문이다.',evidenceOpen:true,quizScore:3};
+  await Promise.all(students.map((s,i)=>request('/api/sessions/'+code+'/activity',{...payload,participantId:s.participantId,...(i===0?{roleGuess:'rd',roleCorrect:true}:{} )})));
+  let dashboard=await request(route+'?key='+key);
+  assert.equal(dashboard.participants.length,5);
+  assert.equal(dashboard.participants.filter(p=>p.roleCorrect).length,4);
+  assert(!JSON.stringify(dashboard).includes('teacherKeyHash'));
+  assert(!JSON.stringify(dashboard).includes(key));
+  await request(route,{key,action:'feedback',participantId:students[0].participantId,feedback:'단서와 역할을 다시 연결해 보세요.'});
+  const own=await request('/api/sessions/'+code+'?participantId='+students[0].participantId);
+  const other=await request('/api/sessions/'+code+'?participantId='+students[1].participantId);
+  assert.equal(own.feedback,'단서와 역할을 다시 연결해 보세요.');
+  assert.equal(other.feedback,null);
+  const publicInfo=await request('/api/sessions/'+code);
+  assert(!('participants' in publicInfo)); assert(!('teacherKeyHash' in publicInfo));
+  await request(route,{key,action:'focus',companyId:'samsung',hubId:'samsung-in-rd'});
+  assert.equal((await request('/api/sessions/'+code)).focusHub,'samsung-in-rd');
+  await request(route,{key,action:'message',message:'다음 단서를 확인해 주세요.'});
+  assert.equal((await request('/api/sessions/'+code)).message,'다음 단서를 확인해 주세요.');
+  await request(route,{key,action:'status',status:'paused'});
+  await request('/api/sessions/'+code+'/activity',{...payload,participantId:students[0].participantId},409);
+  await request(route,{key:'wrong',action:'status',status:'active'},403);
+  await request('/api/sessions/'+code+'/join',{name:'x'},400);
+  await request(route,{key,action:'status',status:'ended'});
+  await request('/api/sessions/'+code+'/join',{name:'종료후 입장'},409);
+  const second=await request('/api/sessions',{title:'격리 검증 '+round});
+  await request('/api/sessions/'+second.code+'?participantId='+students[0].participantId,undefined,404);
+  await request('/api/teacher/'+second.code,{key:second.teacherKey,action:'feedback',participantId:students[0].participantId,feedback:'침범'},404);
+  await request('/api/teacher/'+second.code,{key:second.teacherKey,action:'status',status:'ended'});
+  console.log('PASS round '+round+': 5 students, persistence, role validation, feedback isolation, focus, status gating');
+}
+console.log('All Firebase integration checks passed. Only synthetic closed sessions were created.');
