@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { ArrowRight, Check, Clipboard, Clock3, Globe2, Loader2, MessageSquareText, Pause, Play, Radio, RefreshCw, RotateCcw, Send, Square, Users } from 'lucide-react';
+import { ArrowRight, Check, Clipboard, Clock3, Globe2, Loader2, MessageSquareText, Pause, Play, QrCode, Radio, RefreshCw, RotateCcw, Send, Square, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { companies } from '@/lib/companies';
 
 type Participant = { id: string; name: string; companyId?: string; hubId?: string; roleGuess?: string; roleCorrect: number; inference?: string; evidenceOpen: number; quizScore: number; feedback?: string; joinedAt: number; lastSeen: number };
@@ -25,12 +26,20 @@ export default function TeacherDashboard({ code }: { code: string }) {
   const [actionNote, setActionNote] = useState('');
   const [feedbackSent, setFeedbackSent] = useState<Record<string, boolean>>({});
 
+  const [showQr, setShowQr] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const initialized = useRef(false);
+
   async function load(key = teacherKey) {
     if (!key) return;
     const response = await fetch(`/api/teacher/${code}?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
-    const body = await response.json();
+    const body = await response.json() as DashboardData & { error?: string };
     if (!response.ok) { setError(body.error ?? '대시보드를 불러오지 못했습니다.'); return; }
     setData(body); setError('');
+    if (initialized.current) return;
+    initialized.current = true;
     if (body.session.message) setMessage(body.session.message);
     if (body.session.focus_company) {
       setFocusCompany(body.session.focus_company);
@@ -42,19 +51,26 @@ export default function TeacherDashboard({ code }: { code: string }) {
     const key = new URLSearchParams(window.location.search).get('key') ?? '';
     const url = `${window.location.origin}/?session=${code}`;
     setTeacherKey(key); setJoinUrl(url);
-    QRCode.toDataURL(url, { width: 360, margin: 2, color: { dark: '#153c32', light: '#ffffff' } }).then(setQrUrl);
+    QRCode.toDataURL(url, { width: 360, margin: 2, color: { dark: '#174da9', light: '#ffffff' } }).then(setQrUrl);
     load(key);
     const timer = window.setInterval(() => load(key), 3000);
     return () => window.clearInterval(timer);
   }, [code]);
 
   async function action(payload: Record<string, unknown>, note?: string) {
+    setBusy(true);
+    try {
     const response = await fetch(`/api/teacher/${code}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, key: teacherKey }) });
     if (response.ok) {
       if (payload.action === 'feedback' && typeof payload.participantId === 'string') setFeedbackSent((value) => ({ ...value, [payload.participantId as string]: true }));
       if (note) { setActionNote(note); window.setTimeout(() => setActionNote(''), 2600); }
       await load();
+      return true;
     }
+    setActionNote('요청을 보내지 못했습니다. 다시 시도해 주세요.');
+    return false;
+    } catch { setActionNote('연결을 확인하고 다시 시도해 주세요.'); return false; }
+    finally { setBusy(false); }
   }
 
   const selectedCompany = companies.find((item) => item.id === focusCompany) ?? companies[0];
@@ -68,6 +84,12 @@ export default function TeacherDashboard({ code }: { code: string }) {
   const focusedCompany = companies.find((item) => item.id === data?.session.focus_company);
   const focusedHub = focusedCompany?.hubs.find((item) => item.id === data?.session.focus_hub);
 
+  const selectedStudent = data?.participants.find((item) => item.id === selectedStudentId);
+  const activityText = (item: Participant) => {
+    const minutes = Math.max(0, Math.floor((Date.now() - item.lastSeen) / 60000));
+    return isRecent(item) ? '방금 활동' : minutes < 5 ? `${minutes}분 전 활동` : '5분 이상 활동 기록 없음';
+  };
+
   if (error) return <main className="teacher-error"><Globe2 /><h1>대시보드에 접근할 수 없습니다</h1><p>{error}</p></main>;
   if (!data) return <main className="teacher-loading"><Loader2 /><strong>수업 현황을 불러오는 중입니다</strong><span>학생 수와 진행 상태를 확인하고 있어요.</span></main>;
 
@@ -77,15 +99,14 @@ export default function TeacherDashboard({ code }: { code: string }) {
       <aside className="session-sidebar">
         <span className="dashboard-kicker">CLASS SESSION</span><h1>{data?.session.title ?? '수업 준비 중'}</h1>
         <div className="session-code"><span>학생 입장 코드</span><strong>{code}</strong></div>
-        <div className="qr-frame">{qrUrl && <img src={qrUrl} alt={`수업 코드 ${code} 입장 QR`} />}</div>
-        <p className="join-url">{joinUrl}</p><Button variant="outline" className="copy-link" onClick={() => navigator.clipboard.writeText(joinUrl)}><Clipboard /> 입장 링크 복사</Button>
-        <div className="session-actions"><Button onClick={() => action({ action: 'status', status: 'active' }, '학생 활동을 시작했습니다.')}><Play /> 수업 시작</Button><Button variant="outline" onClick={() => action({ action: 'status', status: 'paused' }, '학생 활동을 잠시 멈췄습니다.')}><Pause /> 잠시 멈춤</Button><Button variant="outline" onClick={() => action({ action: 'status', status: 'ended' }, '수업을 종료했습니다.')}><Square /> 수업 종료</Button></div>
+        {(data.session.status === 'waiting' || showQr) ? <div className="qr-expanded"><div className="qr-frame">{qrUrl && <img src={qrUrl} alt={`수업 코드 ${code} 입장 QR`} />}</div><p className="join-url">{joinUrl}</p><div className="qr-actions"><Button variant="outline" className="copy-link" onClick={() => navigator.clipboard.writeText(joinUrl)}><Clipboard /> 링크 복사</Button>{data.session.status !== 'waiting' && <Button variant="outline" onClick={() => setShowQr(false)}>QR 접기</Button>}</div></div> : <div className="qr-compact"><div><QrCode /><span>추가 학생 입장</span></div><div><Button variant="outline" onClick={() => setShowQr(true)}>QR 보기</Button><Button variant="outline" aria-label="입장 링크 복사" onClick={() => navigator.clipboard.writeText(joinUrl)}><Clipboard /></Button></div></div>}
+        <div className="session-actions"><Button onClick={() => action({ action: 'status', status: 'active' }, '학생 활동을 시작했습니다.')}><Play /> 수업 시작</Button><Button variant="outline" onClick={() => action({ action: 'status', status: 'paused' }, '학생 활동을 잠시 멈췄습니다.')}><Pause /> 잠시 멈춤</Button><Button variant="outline" disabled={busy} onClick={() => setEndConfirmOpen(true)}><Square /> 수업 종료</Button></div>
       </aside>
 
       <section className="dashboard-main">
         <div className="dashboard-heading"><div><span>LIVE CLASSROOM</span><h2>학생 활동 현황</h2></div><Button variant="outline" onClick={() => load()}><RefreshCw /> 새로고침</Button></div>
         {actionNote && <div className="dashboard-notice" role="status"><Check /> {actionNote}</div>}
-        <div className="metric-grid"><article><Users /><div><strong>{data?.participants.length ?? 0}</strong><span>입장 학생</span></div></article><article><Radio /><div><strong>{activeCount}</strong><span>최근 90초 활동</span></div></article><article><Check /><div><strong>{roleCount}</strong><span>역할 추론 완료</span></div></article><article><MessageSquareText /><div><strong>{evidenceCount}</strong><span>근거 확인 완료</span></div></article></div>
+        <div className="metric-grid"><article><Users /><div><strong>{data?.participants.length ?? 0}</strong><span>입장 학생</span></div></article><article><Radio /><div><strong>{data.session.status === 'paused' ? '—' : activeCount}</strong><span>{data.session.status === 'paused' ? '활동 일시정지 중' : '최근 90초 활동'}</span></div></article><article><Check /><div><strong>{roleCount}</strong><span>역할 추론 완료</span></div></article><article><MessageSquareText /><div><strong>{evidenceCount}</strong><span>근거 확인 완료</span></div></article></div>
 
         <div className="teacher-tools">
           <article><div className="tool-title"><MessageSquareText /><strong>전체 안내</strong></div><div className="tool-row"><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="학생 화면 상단에 보낼 안내" /><Button onClick={() => action({ action: 'message', message }, '전체 안내를 학생 화면에 보냈습니다.')}><Send /> 보내기</Button></div></article>
@@ -93,8 +114,10 @@ export default function TeacherDashboard({ code }: { code: string }) {
         </div>
 
         <div className="student-filters" aria-label="학생 진행 상태 필터"><div><strong>학생별 진행</strong><span>도움 필요 {helpCount}명</span></div><div>{([['all','전체'],['help','도움 필요'],['working','진행 중'],['done','완료']] as const).map(([key,label]) => <button key={key} className={filter === key ? 'active' : ''} onClick={() => setFilter(key)}>{label}{key === 'help' && helpCount > 0 ? ` ${helpCount}` : ''}</button>)}</div></div>
-        <div className="student-board"><div className="board-header"><span>학생</span><span>현재 활동</span><span>추론 내용</span><span>개별 피드백</span></div>{filteredParticipants.length ? filteredParticipants.map((student) => { const company = companies.find((item) => item.id === student.companyId); const hub = company?.hubs.find((item) => item.id === student.hubId); return <article key={student.id} className={`student-row ${needsHelp(student) ? 'needs-help' : ''}`}><div className="student-identity"><strong>{student.name}</strong><span><Clock3 /> {isRecent(student) ? '최근 활동 감지' : '90초 이상 활동 없음'}</span>{needsHelp(student) && <em>교사 확인 권장</em>}</div><div className="student-progress"><strong>{company?.name ?? '탐색 전'}</strong><span>{hub?.name ?? '거점 선택 전'}</span><i>{student.evidenceOpen ? '근거 확인 완료' : student.roleCorrect ? '이유 작성 중' : student.roleGuess ? '역할 재추론' : '단서 확인 중'}</i></div><p className="student-inference">{student.inference || '아직 작성하지 않았습니다.'}</p><div className="feedback-cell"><textarea value={feedbackDrafts[student.id] ?? student.feedback ?? ''} onChange={(event) => { setFeedbackSent((value) => ({ ...value, [student.id]: false })); setFeedbackDrafts((value) => ({ ...value, [student.id]: event.target.value })); }} placeholder="짧은 피드백" /><Button size="sm" onClick={() => action({ action: 'feedback', participantId: student.id, feedback: feedbackDrafts[student.id] ?? student.feedback ?? '' }, `${student.name} 학생에게 피드백을 보냈습니다.`)}>{feedbackSent[student.id] ? <><Check /> 전송됨</> : '전송'}</Button></div></article>; }) : <div className="empty-class"><Users /><strong>{data?.participants.length ? '이 조건에 해당하는 학생이 없습니다' : '아직 입장한 학생이 없습니다'}</strong><p>{data?.participants.length ? '다른 필터를 선택해 보세요.' : '학생들이 QR 코드를 스캔하면 이곳에 바로 표시됩니다.'}</p></div>}</div>
+        <div className="student-board"><div className="board-header"><span>학생</span><span>현재 활동</span><span>추론 내용</span><span>관리</span></div>{filteredParticipants.length ? filteredParticipants.map((student) => { const company = companies.find((item) => item.id === student.companyId); const hub = company?.hubs.find((item) => item.id === student.hubId); return <article key={student.id} className={`student-row ${needsHelp(student) ? 'needs-help' : ''}`}><div className="student-identity"><strong>{student.name}</strong><span><Clock3 /> {activityText(student)}</span>{needsHelp(student) && <em>교사 확인 권장</em>}</div><div className="student-progress"><strong>{company?.name ?? '탐색 전'}</strong><span>{hub?.name ?? '거점 선택 전'}</span><i>{student.evidenceOpen ? '근거 확인 완료' : student.roleCorrect ? '이유 작성 중' : student.roleGuess ? '역할 재추론' : '단서 확인 중'}</i></div><p className="student-inference">{student.inference || '아직 작성하지 않았습니다.'}</p><div className="student-action"><Button variant="outline" onClick={() => setSelectedStudentId(student.id)}><MessageSquareText /> 피드백</Button>{student.feedback && <small>전달한 피드백 있음</small>}</div></article>; }) : <div className="empty-class"><Users /><strong>{data?.participants.length ? '이 조건에 해당하는 학생이 없습니다' : '아직 입장한 학생이 없습니다'}</strong><p>{data?.participants.length ? '다른 필터를 선택해 보세요.' : '학생들이 QR 코드를 스캔하면 이곳에 바로 표시됩니다.'}</p></div>}</div>
       </section>
     </section>
+    <Dialog open={Boolean(selectedStudent)} onOpenChange={(open) => { if (!open) setSelectedStudentId(''); }}><DialogContent className="feedback-dialog"><DialogHeader><DialogDescription>개별 피드백</DialogDescription><DialogTitle>{selectedStudent?.name} 학생의 추론</DialogTitle></DialogHeader>{selectedStudent && <><div className="feedback-context"><span>{selectedStudent.roleCorrect ? '역할 선택 완료' : '역할 추론 중'}</span><p>{selectedStudent.inference || '아직 이유를 작성하지 않았습니다.'}</p></div><label htmlFor="teacher-feedback">학생에게 보낼 피드백</label><textarea id="teacher-feedback" value={feedbackDrafts[selectedStudent.id] ?? selectedStudent.feedback ?? ''} onChange={(event) => { setFeedbackSent((value) => ({ ...value, [selectedStudent.id]: false })); setFeedbackDrafts((value) => ({ ...value, [selectedStudent.id]: event.target.value })); }} placeholder="잘한 점과 다음에 생각해 볼 질문을 짧게 적어 주세요." rows={4} /><DialogFooter><Button variant="outline" onClick={() => setSelectedStudentId('')}>닫기</Button><Button disabled={busy} onClick={async () => { const success = await action({ action: 'feedback', participantId: selectedStudent.id, feedback: feedbackDrafts[selectedStudent.id] ?? selectedStudent.feedback ?? '' }, `${selectedStudent.name} 학생에게 피드백을 보냈습니다.`); if (success) setSelectedStudentId(''); }}><Send /> {feedbackSent[selectedStudent.id] ? '다시 보내기' : '피드백 보내기'}</Button></DialogFooter></>}</DialogContent></Dialog>
+    <Dialog open={endConfirmOpen} onOpenChange={setEndConfirmOpen}><DialogContent className="confirm-dialog" showCloseButton={false}><DialogHeader><DialogDescription>수업 상태 변경</DialogDescription><DialogTitle>수업을 종료할까요?</DialogTitle></DialogHeader><p>모든 학생의 활동 화면이 잠깁니다. 학생 기록과 피드백은 대시보드에 남습니다.</p><DialogFooter><Button variant="outline" onClick={() => setEndConfirmOpen(false)}>계속 진행</Button><Button disabled={busy} onClick={async () => { const success = await action({ action: 'status', status: 'ended' }, '수업을 종료했습니다.'); if (success) setEndConfirmOpen(false); }}><Square /> 수업 종료</Button></DialogFooter></DialogContent></Dialog>
   </main>;
 }

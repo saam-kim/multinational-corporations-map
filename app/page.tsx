@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, Building2, Check, ChevronRight, Factory, FlaskConical, Globe2, GraduationCap, Lightbulb, Loader2, Maximize2, Minimize2, Radio, RotateCcw, Sparkles, Trophy, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -63,6 +63,7 @@ export default function Home() {
   const [roleGuess, setRoleGuess] = useState<string | null>(null);
   const [inference, setInference] = useState('');
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [cluesCollapsed, setCluesCollapsed] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -73,6 +74,7 @@ export default function Home() {
   const [joining, setJoining] = useState(false);
   const [creatingSession, setCreatingSession] = useState(false);
   const [classroom, setClassroom] = useState<{ status: string; message?: string | null; feedback?: string | null; focusCompany?: string | null; focusHub?: string | null } | null>(null);
+  const inferenceRef = useRef<HTMLDivElement>(null);
   const quiz = locationQuizzes[questionIndex];
   const finished = questionIndex >= locationQuizzes.length;
   const progress = finished ? 100 : ((questionIndex + 1) / locationQuizzes.length) * 100;
@@ -81,6 +83,13 @@ export default function Home() {
 
   const correctRole = roleKey(hub.type);
   const roleCorrect = roleGuess === correctRole;
+
+  useEffect(() => {
+    if (!roleCorrect) { setCluesCollapsed(false); return; }
+    setCluesCollapsed(true);
+    const timer = window.setTimeout(() => inferenceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
+    return () => window.clearTimeout(timer);
+  }, [roleCorrect, hubId]);
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('session')?.toUpperCase() ?? '';
@@ -96,7 +105,7 @@ export default function Home() {
       const suffix = participantId ? `?participantId=${encodeURIComponent(participantId)}` : '';
       const response = await fetch(`/api/sessions/${sessionCode}${suffix}`);
       if (!response.ok || stopped) return;
-      const data = await response.json();
+      const data = await response.json() as NonNullable<typeof classroom>;
       setClassroom(data);
       if (data.focusCompany && data.focusCompany !== companyId) {
         const focused = companies.find((item) => item.id === data.focusCompany);
@@ -118,7 +127,7 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [sessionCode, participantId, companyId, hubId, roleGuess, roleCorrect, inference, evidenceOpen, score]);
 
-  function selectHub(id: string) { setHubId(id); setRoleGuess(null); setInference(''); setEvidenceOpen(false); }
+  function selectHub(id: string) { setHubId(id); setRoleGuess(null); setInference(''); setEvidenceOpen(false); setCluesCollapsed(false); }
   function selectCompany(id: string) { const next = companies.find((item) => item.id === id) ?? companies[0]; setCompanyId(id); selectHub(next.hubs[0].id); }
   function submitAnswer(optionIndex: number) { if (answer !== null || finished) return; setAnswer(optionIndex); if (optionIndex === quiz.answerIndex) setScore((value) => value + 1); }
   function nextQuestion() { setQuestionIndex((value) => value + 1); setAnswer(null); }
@@ -126,7 +135,7 @@ export default function Home() {
   async function createSession() {
     setCreatingSession(true);
     const response = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: '다국적 기업의 공간적 분업' }) });
-    const data = await response.json();
+    const data = await response.json() as { code: string; teacherKey: string };
     setCreatingSession(false);
     if (response.ok) window.location.assign(`/teacher/${data.code}?key=${encodeURIComponent(data.teacherKey)}`);
   }
@@ -134,7 +143,7 @@ export default function Home() {
     if (joinName.trim().length < 2) { setJoinError('이름을 2자 이상 입력해 주세요.'); return; }
     setJoining(true); setJoinError('');
     const response = await fetch(`/api/sessions/${sessionCode}/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: joinName }) });
-    const data = await response.json();
+    const data = await response.json() as { participantId: string; error?: string };
     setJoining(false);
     if (!response.ok) { setJoinError(data.error ?? '입장하지 못했습니다.'); return; }
     sessionStorage.setItem(`global-shift-${sessionCode}`, data.participantId);
@@ -171,10 +180,10 @@ export default function Home() {
         <aside className="company-panel">
           <div className="company-kicker"><span>{company.flag}</span>{company.continent}</div><h1>{company.name}</h1><p className="company-english">{company.engName}</p><p className="company-category">{company.category}</p>
           <div className="hq-card"><div className="hq-icon"><Building2 /></div><div><span>GLOBAL HQ</span><strong>{company.headquarters.city}</strong></div></div>
-          <p className="strategy-copy">{company.overview.spatialDivisionSummary}</p>
-          <button className="text-action" onClick={() => setOverviewOpen(true)}>기업 전략 전체 보기 <ArrowRight /></button>
+          <p className="strategy-copy">{evidenceOpen ? company.overview.spatialDivisionSummary : `${company.name}의 거점을 골라 지역의 특징을 살펴보세요. 단서와 기능을 연결해 나만의 설명을 만들어 봅시다.`}</p>
+          <button className="text-action" disabled={!evidenceOpen} onClick={() => setOverviewOpen(true)}>{evidenceOpen ? '기업 전략 전체 보기' : '추론 후 기업 전략 보기'} <ArrowRight /></button>
           <div className="flow-mini"><span>기획·설계</span><ChevronRight /><span>부품</span><ChevronRight /><span>조립</span><ChevronRight /><span>시장</span></div>
-          <div className="inquiry-card"><span><BookOpen /> 오늘의 탐구 질문</span><p>{company.overview.curriculumQuestion}</p></div>
+          <div className="inquiry-card"><span><BookOpen /> 오늘의 탐구 질문</span><p>{evidenceOpen ? company.overview.curriculumQuestion : '이 지역의 어떤 특징이 기업의 어떤 활동에 유리할까요?'}</p></div>
         </aside>
 
         <section className="map-stage" aria-label={`${company.name} 글로벌 거점 지도`}>
@@ -189,7 +198,7 @@ export default function Home() {
               <g className="route-layer" aria-hidden="true">
                 {hubs.map((item) => <path key={item.id} d={routePath(company.headquarters, item)} className={`supply-route ${item.id === hub.id ? 'active' : ''}`} />)}
               </g>
-              {pinPoints.map((point) => { const active = point.id === hub.id; const isHq = point.type === 'hq'; const revealed = active && roleCorrect; return <g key={point.id} className={`map-pin ${active ? 'active' : ''} ${isHq ? 'hq' : ''}`} transform={`translate(${point.x} ${point.y})`} onClick={() => !isHq && selectHub(point.id)} role="button" tabIndex={isHq ? -1 : 0} aria-label={isHq ? `${point.name}, 본사` : `${point.name}, 역할 추론이 필요한 거점`} onKeyDown={(event) => { if (!isHq && (event.key === 'Enter' || event.key === ' ')) selectHub(point.id); }}><circle r="17" className="pin-hit" />{active && <circle r="19" className="pin-pulse" />}<circle r={isHq ? 8 : 6.5} fill={isHq ? '#111827' : revealed ? hubMeta[point.type]?.color ?? '#2563eb' : '#5d746b'} /><circle r={isHq ? 3 : 2.4} fill="white" />{(active || isHq) && <text x="12" y="4">{isHq ? 'HQ' : point.name}</text>}</g>; })}
+              {pinPoints.map((point, index) => { const active = point.id === hub.id; const isHq = point.type === 'hq'; const revealed = active && roleCorrect; return <g key={point.id} className={`map-pin ${active ? 'active' : ''} ${isHq ? 'hq' : ''}`} transform={`translate(${point.x} ${point.y})`} onClick={() => !isHq && selectHub(point.id)} role="button" tabIndex={isHq ? -1 : 0} aria-label={isHq ? `${point.name}, 본사` : `${point.name}, ${String(index).padStart(2, '0')}번 거점`} onKeyDown={(event) => { if (!isHq && (event.key === 'Enter' || event.key === ' ')) selectHub(point.id); }}><circle r="17" className="pin-hit" />{active && <circle r="19" className="pin-pulse" />}<circle r={isHq ? 8 : 6.5} fill={isHq ? '#111827' : revealed ? hubMeta[point.type]?.color ?? '#2563eb' : '#3b74c9'} /><circle r={isHq ? 3 : 2.4} fill="white" />{active || isHq ? <text x="12" y="4">{isHq ? 'HQ' : point.name}</text> : <text className="pin-index" x="10" y="4">{String(index).padStart(2, '0')}</text>}</g>; })}
             </svg>
             <div className="active-hub-badge"><span>{hub.country}</span><strong>{hub.name}</strong></div>
             <div className="map-source">NATURAL EARTH · 50m · {countryFeatures.length}개 국가·지역 경계</div>
@@ -199,13 +208,13 @@ export default function Home() {
         </section>
 
         <aside className="detail-panel">
-          <div className="detail-topline"><span style={{ color: roleCorrect ? hubMeta[hub.type]?.color ?? '#2563eb' : '#667970' }}>{roleCorrect ? hubMeta[hub.type]?.label ?? hub.typeLabel : '역할 추론 중'}</span><span>{hub.country}</span></div><h2>{hub.name}</h2>{roleCorrect && <p className="hub-summary">{hub.summary}</p>}
-          <div className="why-heading"><span>REGIONAL CLUES</span><strong>지역 단서 수집</strong></div>
-          <p className="clue-guide">아래 특징을 읽고, 이 기업이 왜 이곳에 거점을 두었는지 먼저 추론해 보세요.</p>
-          <div className="clue-list">{hub.reasons.map((reason, index) => <article key={reason.title} className="clue-card"><span>단서 {String(index + 1).padStart(2, '0')}</span><strong>{reason.title}</strong></article>)}</div>
-          <div className="role-inference"><span className="inference-step">STEP 1</span><strong>이 지역은 어떤 역할을 담당할까?</strong><div className="role-options">{roleOptions.map((option) => { const Icon = option.icon; const selected = roleGuess === option.key; const wrong = selected && !roleCorrect; return <button key={option.key} className={`${selected ? 'selected' : ''} ${wrong ? 'wrong' : ''}`} onClick={() => { setRoleGuess(option.key); setInference(''); setEvidenceOpen(false); }}><Icon /><span>{option.label}</span>{selected && roleCorrect && <Check />}</button>; })}</div>{roleGuess && !roleCorrect && <p className="role-feedback wrong">단서와 역할의 관계를 다시 살펴보세요.</p>}{roleCorrect && <p className="role-feedback correct"><Check /> 역할을 찾았어요. 이제 그 이유를 설명해 보세요.</p>}</div>
-          {roleCorrect && <div className="inference-box">
-            <span className="inference-step">STEP 2</span><label htmlFor="inference"><Lightbulb /> 그 역할을 맡은 이유는?</label>
+          <div className="detail-topline"><span style={{ color: roleCorrect ? hubMeta[hub.type]?.color ?? '#2563eb' : '#667970' }}>{roleCorrect ? hubMeta[hub.type]?.label ?? hub.typeLabel : '역할 추론 중'}</span><span>{hub.country}</span></div><h2>{hub.name}</h2>{evidenceOpen && <p className="hub-summary">{hub.summary}</p>}
+          <div className="why-heading"><span>REGIONAL CLUES</span><strong>지역 단서 수집</strong>{roleCorrect && !cluesCollapsed && <button className="clue-toggle" onClick={() => setCluesCollapsed((value) => !value)}>{cluesCollapsed ? '단서 다시 보기' : '단서 접기'}</button>}</div>
+          {!cluesCollapsed && <p className="clue-guide">아래 특징을 읽고, 이 기업이 왜 이곳에 거점을 두었는지 먼저 추론해 보세요.</p>}
+          {cluesCollapsed ? <button className="clue-summary" onClick={() => setCluesCollapsed(false)}><Check /><span>지역 단서 {hub.reasons.length}개 확인 완료</span><small>눌러서 다시 보기</small></button> : <div className="clue-list">{hub.reasons.map((reason, index) => <article key={reason.title} className="clue-card"><span>단서 {String(index + 1).padStart(2, '0')}</span><strong>{reason.title}</strong></article>)}</div>}
+          <div className="role-inference"><span className="inference-step">STEP 2</span><strong>이 지역은 어떤 역할을 담당할까?</strong><div className="role-options">{roleOptions.map((option) => { const Icon = option.icon; const selected = roleGuess === option.key; const wrong = selected && !roleCorrect; return <button key={option.key} className={`${selected ? 'selected' : ''} ${wrong ? 'wrong' : ''}`} aria-pressed={selected} onClick={() => { if (selected) return; setRoleGuess(option.key); setInference(''); setEvidenceOpen(false); }}><Icon /><span>{option.label}</span>{selected && roleCorrect && <Check />}</button>; })}</div>{roleGuess && !roleCorrect && <p className="role-feedback wrong">단서와 역할의 관계를 다시 살펴보세요.</p>}{roleCorrect && <p className="role-feedback correct"><Check /> 역할을 찾았어요. 이제 그 이유를 설명해 보세요.</p>}</div>
+          {roleCorrect && <div className="inference-box" ref={inferenceRef} tabIndex={-1}>
+            <span className="inference-step">STEP 3</span><label htmlFor="inference"><Lightbulb /> 그 역할을 맡은 이유는?</label>
             <p>지역 단서를 근거로 {company.name}가 이곳에 {hubMeta[hub.type]?.label ?? hub.typeLabel} 기능을 둔 이유를 써 보세요.</p>
             <textarea id="inference" value={inference} onChange={(event) => { setInference(event.target.value); setEvidenceOpen(false); }} placeholder="예: ○○가 풍부해 △△ 비용을 낮출 수 있기 때문이다." rows={3} />
             <div><span>{inference.trim().length < 8 ? '8자 이상 생각을 적어 보세요' : '좋아요. 이제 근거와 비교해 보세요.'}</span><Button disabled={inference.trim().length < 8} onClick={() => setEvidenceOpen(true)}>근거 확인 <ArrowRight /></Button></div>
@@ -219,7 +228,7 @@ export default function Home() {
 
       <Dialog open={overviewOpen} onOpenChange={setOverviewOpen}><DialogContent className="overview-dialog"><DialogHeader><DialogDescription>{company.continent} · {company.category}</DialogDescription><DialogTitle>{company.flag} {company.name} <small>{company.engName}</small></DialogTitle></DialogHeader><div className="overview-stats"><div><span>설립</span><strong>{company.overview.founded}</strong></div><div><span>본사</span><strong>{company.headquarters.country}</strong></div><div><span>글로벌 규모</span><strong>{company.overview.globalScale}</strong></div></div><p className="overview-summary">{company.overview.spatialDivisionSummary}</p><div className="feature-grid">{company.overview.keyFeatures.map((feature, index) => <article key={feature.title}><span>0{index + 1}</span><strong>{feature.title}</strong><p>{feature.text}</p></article>)}</div></DialogContent></Dialog>
 
-      <Dialog open={quizOpen} onOpenChange={setQuizOpen}><DialogContent className="quiz-dialog" showCloseButton={false}><div className="quiz-header"><div><span>LOCATION QUIZ</span><strong>입지 전략 챌린지</strong></div><Button variant="ghost" size="icon" onClick={() => setQuizOpen(false)} aria-label="퀴즈 닫기"><X /></Button></div><Progress value={progress} className="quiz-progress"><ProgressLabel>{finished ? '완료' : `${questionIndex + 1} / ${locationQuizzes.length}`}</ProgressLabel><ProgressValue>{Math.round(progress)}%</ProgressValue></Progress>
+      <Dialog open={quizOpen} onOpenChange={setQuizOpen}><DialogContent className="quiz-dialog" showCloseButton={false}><div className="quiz-header"><div><span>LOCATION QUIZ</span><strong>입지 전략 챌린지</strong></div><Button variant="ghost" size="icon" onClick={() => setQuizOpen(false)} aria-label="퀴즈 닫기"><X /></Button></div><Progress value={progress} className="quiz-progress"><ProgressLabel>{finished ? '완료' : `${questionIndex + 1} / ${locationQuizzes.length}`}</ProgressLabel><ProgressValue>{() => `${Math.round(progress)}%`}</ProgressValue></Progress>
         {finished ? <div className="quiz-result"><div className="result-medal"><Trophy /></div><span>학습 완료</span><h2>{score} / {locationQuizzes.length}</h2><p>{score >= 8 ? '공간적 분업의 원리를 정확히 이해했어요!' : '지도의 거점을 다시 살펴보면 입지 요인이 더 선명해질 거예요.'}</p><Button onClick={restartQuiz}><RotateCcw /> 다시 도전</Button></div> : <div className="quiz-body"><div className="quiz-question"><span>Q{String(questionIndex + 1).padStart(2, '0')}</span><h2>{quiz.question}</h2></div><div className="quiz-options">{quiz.options.map((option, index) => { const correct = answer !== null && index === quiz.answerIndex; const wrong = answer === index && index !== quiz.answerIndex; return <button key={option} className={`${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}`} onClick={() => submitAnswer(index)}><span>{String.fromCharCode(65 + index)}</span><p>{option}</p>{correct && <Check />}</button>; })}</div>{answer !== null && <div className={`quiz-feedback ${answer === quiz.answerIndex ? 'correct' : 'wrong'}`}><strong>{answer === quiz.answerIndex ? '정답이에요!' : '핵심 개념을 다시 확인해 봐요.'}</strong><p>{quiz.explanation}</p><Button onClick={nextQuestion}>다음 문제 <ArrowRight /></Button></div>}</div>}
       </DialogContent></Dialog>
 

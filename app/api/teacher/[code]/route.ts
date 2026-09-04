@@ -20,13 +20,14 @@ export async function GET(request: Request, context: { params: Promise<{ code: s
 export async function POST(request: Request, context: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = await context.params;
   const code = rawCode.toUpperCase();
-  const body = await request.json().catch(() => ({}));
+  const raw: unknown = await request.json().catch(() => ({}));
+  const body: Record<string, unknown> = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
   const key = cleanText(body.key, 80);
   if (!await authorize(code, key)) return jsonError('교사 관리 링크가 올바르지 않습니다.', 403);
   const db = classroomDb();
 
   if (body.action === 'status') {
-    const status = ['waiting', 'active', 'paused', 'ended'].includes(body.status) ? body.status : 'waiting';
+    const status = ['waiting', 'active', 'paused', 'ended'].includes(String(body.status)) ? String(body.status) : 'waiting';
     await db.prepare('UPDATE sessions SET status = ?, updated_at = ? WHERE code = ?').bind(status, Date.now(), code).run();
   } else if (body.action === 'message') {
     await db.prepare('UPDATE sessions SET message = ?, updated_at = ? WHERE code = ?').bind(cleanText(body.message, 240) || null, Date.now(), code).run();

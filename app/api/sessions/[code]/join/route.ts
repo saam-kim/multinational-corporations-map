@@ -3,7 +3,8 @@ import { classroomDb, cleanText, jsonError } from '@/lib/db';
 export async function POST(request: Request, context: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = await context.params;
   const code = rawCode.toUpperCase();
-  const body = await request.json().catch(() => ({}));
+  const raw: unknown = await request.json().catch(() => ({}));
+  const body: Record<string, unknown> = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
   const name = cleanText(body.name, 24);
   if (name.length < 2) return jsonError('이름을 2자 이상 입력해 주세요.');
 

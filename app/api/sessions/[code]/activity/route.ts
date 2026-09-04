@@ -3,7 +3,8 @@ import { classroomDb, cleanText, jsonError } from '@/lib/db';
 export async function POST(request: Request, context: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = await context.params;
   const code = rawCode.toUpperCase();
-  const body = await request.json().catch(() => ({}));
+  const raw: unknown = await request.json().catch(() => ({}));
+  const body: Record<string, unknown> = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
   const participantId = cleanText(body.participantId, 80);
   if (!participantId) return jsonError('학생 정보가 없습니다.', 401);
 

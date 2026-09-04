@@ -9,7 +9,8 @@ function sessionCode() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
+  const raw: unknown = await request.json().catch(() => ({}));
+  const body: Record<string, unknown> = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
   const title = cleanText(body.title, 80) || '다국적 기업의 공간적 분업';
   const db = classroomDb();
   const now = Date.now();
