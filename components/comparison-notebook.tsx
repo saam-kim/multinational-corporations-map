@@ -12,7 +12,7 @@ export function ComparisonNotebook({open,onOpenChange,records,value,onChange,loc
     }
   }, [open, submitted, value, onChange, locked]);
   const title = (r:LearningRecord) => `${companies.find(c => c.id === r.companyId)?.name} · ${companies.find(c => c.id === r.companyId)?.hubs.find(h => h.id === r.hubId)?.name}`;
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="notebook-dialog"><DialogHeader><DialogDescription>교과서 개념을 새로운 사례에 적용하기</DialogDescription><DialogTitle>두 지역, 다른 입지 이유</DialogTitle></DialogHeader>
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="notebook-dialog"><DialogHeader><DialogDescription>공간적 분업 개념을 새로운 사례에 적용하기</DialogDescription><DialogTitle>두 지역, 다른 입지 이유</DialogTitle></DialogHeader>
     <p className="notebook-intro">두 곳만 살펴보고, 입지 이유의 공통점이나 차이점을 한 문장으로 남기세요.</p>
     {!submitted.length && <p>지도에서 한 곳의 가설과 이유를 남기고 사례를 확인하면 이곳에 기록이 쌓입니다. 두 곳을 비교해 보세요.</p>}
     <div className="notebook-records">{submitted.filter(r => r.hubId === value.first || r.hubId === value.second || submitted.length < 2).map(r => <article key={r.hubId}><strong>{title(r)}</strong><span>사례의 기능 · {roleNames[expectedRole(companies.find(c => c.id === r.companyId)?.hubs.find(h => h.id === r.hubId)?.type ?? '')]}</span><span>내가 예상한 기능 · {roleNames[r.roleGuess ?? '']}</span><p>{r.inference}</p>{r.revision && <><span>보완한 설명</span><p>{r.revision}</p></>}</article>)}</div>
