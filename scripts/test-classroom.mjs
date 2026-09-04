@@ -12,7 +12,7 @@ for(let round=1;round<=3;round++){
   await request(route+'?key=wrong',undefined,403);
   const students=await Promise.all(Array.from({length:5},(_,i)=>request('/api/sessions/'+code+'/join',{name:'검증학생 '+(i+1)})));
   await request(route,{key,action:'status',status:'active'});
-  const payload={companyId:'samsung',hubId:'samsung-vn',roleGuess:'assembly',roleCorrect:true,inference:'노동력과 항만 접근성이 생산 및 수출 비용을 낮추기 때문이다.',evidenceOpen:true,quizScore:3};
+  const payload={companyId:'samsung',hubId:'samsung-vn',roleGuess:'assembly',roleCorrect:true,clueIndex:0,inference:'노동력과 항만 접근성이 생산 및 수출 비용을 낮추기 때문이다.',evidenceOpen:true,quizScore:3};
   await Promise.all(students.map((s,i)=>request('/api/sessions/'+code+'/activity',{...payload,participantId:s.participantId,...(i===0?{roleGuess:'rd',roleCorrect:true}:{} )})));
   let dashboard=await request(route+'?key='+key);
   assert.equal(dashboard.participants.length,5);
@@ -24,8 +24,15 @@ for(let round=1;round<=3;round++){
   const other=await request('/api/sessions/'+code+'?participantId='+students[1].participantId);
   assert.equal(own.feedback,'단서와 역할을 다시 연결해 보세요.');
   assert.equal(other.feedback,null);
+  assert.equal(own.work.records['samsung-vn'].evidenceOpen,true,'Wrong hypotheses can still be compared after explanation');
+  await request('/api/sessions/'+code+'/activity',{...payload,hubId:'samsung-in-mfg',participantId:students[0].participantId});
+  const restored=await request('/api/sessions/'+code+'?participantId='+students[0].participantId);
+  assert.equal(Object.keys(restored.work.records).length,2,'Switching hubs preserves both records');
+  assert.equal(restored.work.records['samsung-vn'].roleGuess,'rd','First hypothesis retained');
+  await request('/api/sessions/'+code+'/activity',{participantId:students[0].participantId,comparison:{first:'samsung-vn',second:'samsung-in-mfg',explanation:'생산 기능은 같아도 노동력과 시장의 중요도가 다르다.',transfer:'임금 외에도 시장과 정부 지원을 고려하기 때문이다.'}});
+  assert.equal((await request('/api/sessions/'+code+'?participantId='+students[0].participantId)).work.comparison.first,'samsung-vn');
   const publicInfo=await request('/api/sessions/'+code);
-  assert(!('participants' in publicInfo)); assert(!('teacherKeyHash' in publicInfo));
+  assert(!('participants' in publicInfo)); assert(!('teacherKeyHash' in publicInfo)); assert(!('work' in publicInfo));
   await request(route,{key,action:'focus',companyId:'samsung',hubId:'samsung-in-rd'});
   assert.equal((await request('/api/sessions/'+code)).focusHub,'samsung-in-rd');
   await request(route,{key,action:'message',message:'다음 단서를 확인해 주세요.'});

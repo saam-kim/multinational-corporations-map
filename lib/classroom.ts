@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { classroomDb } from './firebase-admin';
 import { companies } from './companies';
+import { expectedRole, emptyComparison } from './learning';
 
 export class ClassroomError extends Error {
   constructor(message: string, public status = 400) { super(message); }
@@ -49,12 +50,14 @@ export async function readSession(code: string, participantId: string | null) {
   if (!snapshot.exists) throw new ClassroomError('세션을 찾을 수 없습니다.', 404);
   const session = snapshot.data() as Session;
   let feedback: string | null = null;
+  let work;
   if (participantId) {
     const participant = await participantRef(code, participantId).get();
     if (!participant.exists) throw new ClassroomError('참여 학생을 찾을 수 없습니다.', 404);
     feedback = participant.get('feedback') ?? null;
+    work = {records: participant.get('records') ?? {}, comparison: participant.get('comparison') ?? emptyComparison};
   }
-  return { code, title: session.title, status: session.status, focusCompany: session.focus_company, focusHub: session.focus_hub, message: session.message, updatedAt: session.updated_at, feedback };
+  return { code, title: session.title, status: session.status, focusCompany: session.focus_company, focusHub: session.focus_hub, message: session.message, updatedAt: session.updated_at, feedback, ...(work ? {work} : {}) };
 }
 export async function joinSession(code: string, name: string) {
   if (name.length < 2) throw new ClassroomError('이름을 2자 이상 입력해 주세요.');
@@ -92,21 +95,33 @@ function validatedActivity(body: Record<string, unknown>) {
   const hub = company?.hubs.find(item => item.id === hubId);
   if (!company || !hub) throw new ClassroomError('기업과 거점 정보를 확인해 주세요.');
   const roleGuess = cleanText(body.roleGuess, 20) || null;
-  if (roleGuess && !['assembly', 'rd', 'resource', 'market'].includes(roleGuess)) throw new ClassroomError('역할 선택을 확인해 주세요.');
-  const expected = hub.type === 'assembly' ? 'assembly' : hub.type === 'rd' ? 'rd' : ['mine', 'fab'].includes(hub.type) ? 'resource' : 'market';
+  if (roleGuess && !['assembly', 'rd', 'component', 'resource', 'market'].includes(roleGuess)) throw new ClassroomError('역할 선택을 확인해 주세요.');
+  const expected = expectedRole(hub.type);
   const roleCorrect = roleGuess === expected ? 1 : 0;
   const inference = cleanText(body.inference, 700) || null;
-  return { companyId, hubId, roleGuess, roleCorrect, inference, evidenceOpen: body.evidenceOpen === true && roleCorrect && (inference?.length ?? 0) >= 8 ? 1 : 0, quizScore: Number.isFinite(body.quizScore) ? Math.max(0, Math.min(10, Math.floor(Number(body.quizScore)))) : 0, lastSeen: Date.now() };
+  const clueIndex = Number.isInteger(body.clueIndex) && Number(body.clueIndex) >= 0 && Number(body.clueIndex) < hub.reasons.length ? Number(body.clueIndex) : -1;
+  return { companyId, hubId, roleGuess, roleCorrect, inference: inference ?? '', clueIndex, revision: cleanText(body.revision, 700), helpRequested: body.helpRequested === true, evidenceOpen: body.evidenceOpen === true && roleGuess && clueIndex >= 0 && (inference?.length ?? 0) >= 8 ? 1 : 0, quizScore: Number.isFinite(body.quizScore) ? Math.max(0, Math.min(10, Math.floor(Number(body.quizScore)))) : 0, lastSeen: Date.now() };
 }
 export async function updateActivity(code: string, body: Record<string, unknown>) {
   const ref = sessionRef(code);
   const participant = participantRef(code, cleanText(body.participantId, 80));
-  const activity = validatedActivity(body);
+  const activity = body.comparison ? null : validatedActivity(body);
   await classroomDb().runTransaction(async tx => {
     const [session, student] = await Promise.all([tx.get(ref), tx.get(participant)]);
     if (!session.exists || !student.exists) throw new ClassroomError('참여 학생을 찾을 수 없습니다.', 404);
     if (session.get('status') !== 'active') throw new ClassroomError('지금은 학생 활동 시간이 아닙니다.', 409);
-    tx.update(participant, activity);
+    if (!activity) {
+      const raw = body.comparison as Record<string, unknown>;
+      const first = cleanText(raw.first, 80), second = cleanText(raw.second, 80);
+      const records = student.get('records') ?? {};
+      if ((first && !records[first]?.evidenceOpen) || (second && !records[second]?.evidenceOpen) || (first && first === second)) throw new ClassroomError('서로 다른 두 거점의 사례를 먼저 확인해 주세요.');
+      tx.update(participant, {comparison:{first,second,explanation:cleanText(raw.explanation,1000),transfer:cleanText(raw.transfer,1000)},lastSeen:Date.now()});
+    } else {
+      const previous = student.get('records')?.[activity.hubId];
+      const record = {...activity, evidenceOpen: Boolean(activity.evidenceOpen)};
+      const firstSubmission = previous?.firstSubmission ?? (activity.evidenceOpen ? {roleGuess:activity.roleGuess,inference:activity.inference,clueIndex:activity.clueIndex} : null);
+      tx.update(participant, {...activity, [`records.${activity.hubId}`]: {...record, firstSubmission}});
+    }
   });
   return {ok: true};
 }
