@@ -119,8 +119,8 @@ test('every location clue includes concise causal background', () => {
       for (const reason of hub.reasons) {
         const background = clueBackgroundFor(reason.title);
         usedTitles.add(reason.title);
-        assert(background.length >= 70, `${hub.id}: ${reason.title}`);
-        assert(background.length <= 220, `${hub.id}: ${reason.title}`);
+        assert(background.length >= 50, `${hub.id}: ${reason.title}`);
+        assert(background.length <= 100, `${hub.id}: ${reason.title}`);
       }
     }
   }
@@ -129,11 +129,11 @@ test('every location clue includes concise causal background', () => {
   assert.match(clueBackgroundFor(vietnam.reasons[0].title), /부족|과제/);
 });
 
-test('causal background is directly visible after the function is revealed', () => {
+test('causal background is always visible without an expand control', () => {
   const source = readFileSync('components/teaching-map.tsx', 'utf8');
 
-  assert.match(source, /stage === 0 \? \(/);
-  assert.match(source, /clue-background-revealed/);
+  assert.doesNotMatch(source, /<details className="clue-background">/);
+  assert.match(source, /<section className="clue-background"/);
   assert.match(source, /aria-label="형성 배경"/);
 });
 
