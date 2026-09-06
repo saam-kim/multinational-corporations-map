@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { companies } from '../lib/companies.ts';
 import {
@@ -126,6 +127,14 @@ test('every location clue includes concise causal background', () => {
   assert.equal(usedTitles.size, Object.keys(clueBackgrounds).length);
   assert.match(clueBackgroundFor(vietnam.reasons[0].title), /투자|생산 현장/);
   assert.match(clueBackgroundFor(vietnam.reasons[0].title), /부족|과제/);
+});
+
+test('causal background is directly visible after the function is revealed', () => {
+  const source = readFileSync('components/teaching-map.tsx', 'utf8');
+
+  assert.match(source, /stage === 0 \? \(/);
+  assert.match(source, /clue-background-revealed/);
+  assert.match(source, /aria-label="형성 배경"/);
 });
 
 test('long explanations can show a core sentence before optional detail', () => {

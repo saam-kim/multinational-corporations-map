@@ -635,15 +635,27 @@ export default function TeachingMap({
                       <em>{clueFactor(r.title)}</em>
                     </span>
                     <strong>{r.title}</strong>
-                    {typeof background === 'string' && background && (
-                      <details className="clue-background">
-                        <summary>
-                          <span>형성 배경</span>
-                          왜 이런 조건이 형성됐을까?
-                        </summary>
-                        <p>{background}</p>
-                      </details>
-                    )}
+                    {typeof background === 'string' && background &&
+                      (stage === 0 ? (
+                        <details className="clue-background">
+                          <summary>
+                            <span>형성 배경</span>
+                            왜 이런 조건이 형성됐을까?
+                          </summary>
+                          <p>{background}</p>
+                        </details>
+                      ) : (
+                        <section
+                          className="clue-background clue-background-revealed"
+                          aria-label="형성 배경"
+                        >
+                          <div className="clue-background-heading">
+                            <span>형성 배경</span>
+                            왜 이런 조건이 형성됐을까?
+                          </div>
+                          <p>{background}</p>
+                        </section>
+                      ))}
                     {stage === 2 && (
                       <>
                         <p>
