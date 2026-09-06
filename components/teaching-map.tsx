@@ -12,6 +12,7 @@ import {
   Globe2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { clueBackgroundFor } from '@/lib/clue-backgrounds';
 import { companies } from '@/lib/companies';
 import { companyReferences, evidenceFor } from '@/lib/teaching-evidence';
 import {
@@ -626,7 +627,7 @@ export default function TeachingMap({
             </h3>
             <div className="teach-clues">
               {hub.reasons.map((r, i) => {
-                const background = (r as { background?: unknown }).background;
+                const background = clueBackgroundFor(r.title);
                 return (
                   <article key={r.title}>
                     <span className="clue-meta">

@@ -9,6 +9,7 @@ import {
   splitExplanation,
 } from '../lib/teaching-flow.ts';
 import { evidenceFor, hubEvidence } from '../lib/teaching-evidence.ts';
+import { clueBackgroundFor, clueBackgrounds } from '../lib/clue-backgrounds.ts';
 
 const samsung = companies.find((c) => c.id === 'samsung');
 const vietnam = samsung.hubs.find((h) => h.id === 'samsung-vn');
@@ -109,15 +110,22 @@ test('every clue receives a short location-factor label', () => {
   }
 });
 
-test('Vietnam clues include concise causal background without overstating skills', () => {
+test('every location clue includes concise causal background', () => {
   assert.doesNotMatch(vietnam.reasons[0].title, /^숙련된/);
-  for (const reason of vietnam.reasons) {
-    assert.equal(typeof reason.background, 'string');
-    assert(reason.background.length >= 70);
-    assert(reason.background.length <= 180);
+  const usedTitles = new Set();
+  for (const company of companies) {
+    for (const hub of company.hubs) {
+      for (const reason of hub.reasons) {
+        const background = clueBackgroundFor(reason.title);
+        usedTitles.add(reason.title);
+        assert(background.length >= 70, `${hub.id}: ${reason.title}`);
+        assert(background.length <= 220, `${hub.id}: ${reason.title}`);
+      }
+    }
   }
-  assert.match(vietnam.reasons[0].background, /투자|생산 현장/);
-  assert.match(vietnam.reasons[0].background, /부족|과제/);
+  assert.equal(usedTitles.size, Object.keys(clueBackgrounds).length);
+  assert.match(clueBackgroundFor(vietnam.reasons[0].title), /투자|생산 현장/);
+  assert.match(clueBackgroundFor(vietnam.reasons[0].title), /부족|과제/);
 });
 
 test('long explanations can show a core sentence before optional detail', () => {
