@@ -625,29 +625,41 @@ export default function TeachingMap({
                   : '지역 조건은 기업에 어떤 이점을 줄까요?'}
             </h3>
             <div className="teach-clues">
-              {hub.reasons.map((r, i) => (
-                <article key={r.title}>
-                  <span className="clue-meta">
-                    <b>입지 단서 {String(i + 1).padStart(2, '0')}</b>
-                    <em>{clueFactor(r.title)}</em>
-                  </span>
-                  <strong>{r.title}</strong>
-                  {stage === 2 && (
-                    <>
-                      <p>
-                        <em>기업 활동과의 연결</em>
-                        {splitExplanation(r.detail)[0]}
-                      </p>
-                      {splitExplanation(r.detail)[1] && (
-                        <details className="clue-more">
-                          <summary>보충 설명</summary>
-                          <p>{splitExplanation(r.detail)[1]}</p>
-                        </details>
-                      )}
-                    </>
-                  )}
-                </article>
-              ))}
+              {hub.reasons.map((r, i) => {
+                const background = (r as { background?: unknown }).background;
+                return (
+                  <article key={r.title}>
+                    <span className="clue-meta">
+                      <b>입지 단서 {String(i + 1).padStart(2, '0')}</b>
+                      <em>{clueFactor(r.title)}</em>
+                    </span>
+                    <strong>{r.title}</strong>
+                    {typeof background === 'string' && background && (
+                      <details className="clue-background">
+                        <summary>
+                          <span>형성 배경</span>
+                          왜 이런 조건이 형성됐을까?
+                        </summary>
+                        <p>{background}</p>
+                      </details>
+                    )}
+                    {stage === 2 && (
+                      <>
+                        <p>
+                          <em>기업 활동과의 연결</em>
+                          {splitExplanation(r.detail)[0]}
+                        </p>
+                        {splitExplanation(r.detail)[1] && (
+                          <details className="clue-more">
+                            <summary>보충 설명</summary>
+                            <p>{splitExplanation(r.detail)[1]}</p>
+                          </details>
+                        )}
+                      </>
+                    )}
+                  </article>
+                );
+              })}
             </div>
             {stage === 2 && (
               <>

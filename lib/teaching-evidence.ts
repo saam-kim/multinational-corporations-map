@@ -15,12 +15,24 @@ export const hubEvidence: Record<string, EvidenceNote> = {
     status: '기능 자료 연결',
     checked: '2026-09-06',
     scope:
-      '박닌·타이응우옌의 모바일 기기 생산 기능과 산업단지 소재를 확인했습니다. 임금 수준이나 개별 입지 결정의 원인을 검증한 자료는 아닙니다.',
-    note: '두 지역을 묶어 표시했습니다. 공식 소개에는 모바일 기기 외 부품 생산도 포함됩니다.',
+      '박닌·타이응우옌의 모바일 기기 생산 기능과 산업단지 소재, 베트남 전자 산업의 외국인 투자·고용 확대와 북부 산업단지의 교통축 집적을 확인했습니다.',
+    note: '두 지역을 묶어 표시했습니다. 형성 배경은 여러 자료를 종합한 설명이며, 한 기업의 입지 결정이 하나의 원인만으로 이루어졌다는 뜻은 아닙니다.',
     sources: [
       {
         label: 'Samsung Vietnam · 사업장별 기능 (발행일 미표기)',
         url: 'https://news.samsung.com/vn/overview',
+      },
+      {
+        label: 'ILO · 베트남 전자 공급망과 고용 보고서 (2023)',
+        url: 'https://www.ilo.org/sites/default/files/wcmsp5/groups/public/%40ed_dialogue/%40sector/documents/publication/wcms_865520.pdf',
+      },
+      {
+        label: 'World Bank · 세계개발보고서: 베트남 전자 산업 사례 (2020)',
+        url: 'https://documents1.worldbank.org/curated/en/310211570690546749/pdf/World-Development-Report-2020-Trading-for-Development-in-the-Age-of-Global-Value-Chains.pdf',
+      },
+      {
+        label: 'World Bank · 베트남 성장과 연결성 보고서 (2019)',
+        url: 'https://documents1.worldbank.org/curated/en/590451578409008253/pdf/Vietnam-Development-Report-2019-Connecting-Vietnam-for-Growth-and-Shared-Prosperity.pdf',
       },
     ],
   },

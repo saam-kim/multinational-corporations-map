@@ -109,6 +109,17 @@ test('every clue receives a short location-factor label', () => {
   }
 });
 
+test('Vietnam clues include concise causal background without overstating skills', () => {
+  assert.doesNotMatch(vietnam.reasons[0].title, /^숙련된/);
+  for (const reason of vietnam.reasons) {
+    assert.equal(typeof reason.background, 'string');
+    assert(reason.background.length >= 70);
+    assert(reason.background.length <= 180);
+  }
+  assert.match(vietnam.reasons[0].background, /투자|생산 현장/);
+  assert.match(vietnam.reasons[0].background, /부족|과제/);
+});
+
 test('long explanations can show a core sentence before optional detail', () => {
   assert.deepEqual(splitExplanation('핵심입니다. 보충 내용입니다.'), [
     '핵심입니다.',

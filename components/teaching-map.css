@@ -73,3 +73,13 @@
   .sheet-write-lines{height:58px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 18px,#a9bcd6 19px,#a9bcd6 20px)}
   .sheet-final-question{font-size:11pt!important;margin:8px 0 2px!important}
 }
+.clue-background{margin-top:10px;border:1px solid #c6d9f0;border-radius:9px;background:#f7fbff;overflow:hidden}
+.clue-background summary{display:flex;align-items:center;gap:8px;min-height:42px;padding:8px 10px;cursor:pointer;color:#244c7c;font-size:14px;font-weight:800;line-height:1.4;list-style:none}
+.clue-background summary::-webkit-details-marker{display:none}
+.clue-background summary span{flex:none;padding:3px 7px;border-radius:999px;background:#dcecff;color:#1d4ed8;font-size:11px;font-weight:850;letter-spacing:.02em}
+.clue-background summary::after{content:'+';margin-left:auto;color:#50739d;font-size:18px;font-weight:500}
+.clue-background[open] summary{border-bottom:1px solid #d5e3f3;background:#edf5ff}
+.clue-background[open] summary::after{content:'−'}
+.clue-background>p{margin:0!important;padding:10px 12px 12px;color:#405d7d!important;font-size:14px!important;line-height:1.65!important}
+.clue-background summary:focus-visible{outline:3px solid #2563eb;outline-offset:-3px}
+@media screen and (min-width:1000px){.teach-presenting .clue-background summary{min-height:48px;font-size:17px}.teach-presenting .clue-background>p{font-size:18px!important;line-height:1.65!important}}
