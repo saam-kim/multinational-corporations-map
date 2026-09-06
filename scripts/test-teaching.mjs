@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { companies } from '../lib/companies.ts';
 import {
+  clueFactor,
   comparisonHub,
   connectionConcept,
   connectionQuestion,
@@ -89,6 +90,23 @@ test('clue titles avoid unexplained specialist terms in the question stage', () 
     titles,
     /수직계열화|인센티브|클러스터|리스크|미세 나노|SDV|MERCOSUR|GTL/,
   );
+  assert.doesNotMatch(titles, /(있음|많음|쉬움|커짐|줄임)$/);
+});
+
+test('every clue receives a short location-factor label', () => {
+  const allowed = new Set([
+    '위험 분산', '시장', '정책·제도', '교통·접근', '자원',
+    '인력·지식', '산업 집적', '기술', '생산 조건', '지역 조건',
+  ]);
+  for (const company of companies) {
+    for (const hub of company.hubs) {
+      for (const reason of hub.reasons) {
+        const factor = clueFactor(reason.title);
+        assert(allowed.has(factor));
+        assert(factor.length <= 6);
+      }
+    }
+  }
 });
 
 test('long explanations can show a core sentence before optional detail', () => {

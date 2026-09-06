@@ -24,6 +24,11 @@
 .compare-prompt select{width:100%}
 .teach-shell .source-links a,.teach-shell .perspective-prompt summary,.teach-shell .perspective-prompt p{font-size:14px;line-height:1.6}
 .teach-shell .teach-clues article>span,.teach-shell .teach-clues p em{font-size:14px}
+.teach-clues .clue-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.teach-clues .clue-meta b{font-size:14px;font-weight:800;color:#1d4ed8}
+.teach-clues .clue-meta em{flex:none;padding:3px 8px;border:1px solid #bdd0e8;border-radius:999px;background:#f2f7fd;color:#3f5e82;font-size:12px;font-style:normal;font-weight:750}
+.sheet-clues li{margin:4px 0}
+.sheet-clues li span{display:inline-block;min-width:62px;margin-right:8px;padding:1px 5px;border:1px solid #b9cbe1;border-radius:4px;color:#36597f;font-size:11px;text-align:center}
 @media screen and (min-width:1000px){.teach-map{grid-template-rows:auto minmax(0,1fr) auto auto auto!important}.teach-clues article{padding:12px 14px}.teach-steps{margin-bottom:12px}.teach-inquiry h3{margin-bottom:12px}.teach-presenting .connection-pair strong{font-size:22px}.teach-presenting .teach-connection>p{font-size:20px}}
 @media screen and (max-height:650px) and (min-width:1000px){.teach-shell,.teach-presenting{height:auto;min-height:100dvh;overflow:visible}.teach-workspace{min-height:480px}.teach-inquiry-scroll{max-height:65vh}.teach-map>svg{min-height:210px}}
 @media screen and (max-width:600px){.connection-pair{grid-template-columns:1fr}.teach-connection{padding:12px 16px}}

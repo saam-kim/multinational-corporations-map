@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { companies } from '@/lib/companies';
 import { companyReferences, evidenceFor } from '@/lib/teaching-evidence';
 import {
+  clueFactor,
   comparisonHub,
   connectionConcept,
   connectionQuestion,
@@ -33,7 +34,7 @@ const countries = (
     worldAtlas.objects.countries as never,
   ) as unknown as { features: { id?: string | number }[] }
 ).features;
-const steps = ['지역 단서', '기능 공개', '이유 공개'];
+const steps = ['입지 단서', '기능 공개', '이유 공개'];
 const shortName = (name: string) => name.replace(/\s*\([^)]*\)/g, '').trim();
 const countryIds: Record<string, number> = {
   대한민국: 410,
@@ -626,12 +627,15 @@ export default function TeachingMap({
             <div className="teach-clues">
               {hub.reasons.map((r, i) => (
                 <article key={r.title}>
-                  <span>추론 단서 {i + 1}</span>
+                  <span className="clue-meta">
+                    <b>입지 단서 {String(i + 1).padStart(2, '0')}</b>
+                    <em>{clueFactor(r.title)}</em>
+                  </span>
                   <strong>{r.title}</strong>
                   {stage === 2 && (
                     <>
                       <p>
-                        <em>입지 해석</em>
+                        <em>기업 활동과의 연결</em>
                         {splitExplanation(r.detail)[0]}
                       </p>
                       {splitExplanation(r.detail)[1] && (
@@ -794,7 +798,10 @@ export default function TeachingMap({
                 </h2>
                 <ul className="sheet-clues">
                   {h.reasons.map((r) => (
-                    <li key={r.title}>{r.title}</li>
+                    <li key={r.title}>
+                      <span>{clueFactor(r.title)}</span>
+                      {r.title}
+                    </li>
                   ))}
                 </ul>
                 <div className="sheet-role-question">
