@@ -18,6 +18,7 @@ import {
   comparisonHub,
   connectionConcept,
   connectionQuestion,
+  splitExplanation,
 } from '@/lib/teaching-flow';
 import worldAtlas from 'world-atlas/countries-50m.json';
 import { geoEquirectangular, geoPath } from 'd3-geo';
@@ -34,6 +35,35 @@ const countries = (
 ).features;
 const steps = ['지역 단서', '기능 공개', '이유 공개'];
 const shortName = (name: string) => name.replace(/\s*\([^)]*\)/g, '').trim();
+const countryIds: Record<string, number> = {
+  대한민국: 410,
+  베트남: 704,
+  인도: 356,
+  미국: 840,
+  대만: 158,
+  중국: 156,
+  이스라엘: 376,
+  독일: 276,
+  슬로바키아: 703,
+  멕시코: 484,
+  태국: 764,
+  헝가리: 348,
+  브라질: 76,
+  포르투갈: 620,
+  프랑스: 250,
+  오스트레일리아: 36,
+  칠레: 152,
+  싱가포르: 702,
+  남아프리카공화국: 710,
+  카타르: 634,
+};
+const activityRoles = [
+  '조립·생산',
+  '연구개발',
+  '부품 생산',
+  '자원 채굴',
+  '판매·물류',
+];
 
 export default function TeachingMap({
   initialCompany,
@@ -60,11 +90,23 @@ export default function TeachingMap({
   const svgRef = useRef<SVGSVGElement>(null);
   const shellRef = useRef<HTMLElement>(null);
   const [sheet, setSheet] = useState(false);
+  const [pptOpen, setPptOpen] = useState(false);
   const sheetRef = useRef<HTMLElement>(null);
   const inquiryRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     inquiryRef.current?.scrollTo({ top: 0 });
   }, [hub.id, stage]);
+  useEffect(() => {
+    if (!pptOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setPptOpen(false);
+      }
+    };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [pptOpen]);
   useEffect(() => {
     if (!sheet) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -272,7 +314,11 @@ export default function TeachingMap({
           <span>공간적 분업</span>
         </div>
         <nav aria-label="수업 도구">
-          <details className="teach-ppt">
+          <details
+            className="teach-ppt"
+            open={pptOpen}
+            onToggle={(event) => setPptOpen(event.currentTarget.open)}
+          >
             <summary>
               <Download size={16} /> PPT 자료
             </summary>
@@ -336,10 +382,16 @@ export default function TeachingMap({
             <button
               key={h.id}
               aria-pressed={h.id === hub.id}
+              aria-label={`${shortName(h.name)}${(stages[h.id] ?? 0) >= 1 ? ', 살펴본 거점' : ''}`}
               onClick={() => select(company.id, h.id)}
             >
-              <span>{String(i + 1).padStart(2, '0')}</span>
+              <span className="hub-index">
+                {String(i + 1).padStart(2, '0')}
+              </span>
               {shortName(h.name)}
+              {(stages[h.id] ?? 0) >= 1 && h.id !== hub.id && (
+                <span className="hub-seen">✓ 확인</span>
+              )}
             </button>
           ))}
         </div>
@@ -367,9 +419,19 @@ export default function TeachingMap({
               <path
                 key={i}
                 d={path(c as never) ?? ''}
-                fill="#d4e2f5"
-                stroke="#738eaf"
-                strokeWidth=".65"
+                fill={
+                  Number(c.id) === countryIds[hub.country]
+                    ? '#a9c8f5'
+                    : '#d4e2f5'
+                }
+                stroke={
+                  Number(c.id) === countryIds[hub.country]
+                    ? '#2563eb'
+                    : '#738eaf'
+                }
+                strokeWidth={
+                  Number(c.id) === countryIds[hub.country] ? 1.4 : 0.65
+                }
               />
             ))}
             {company.hubs.map((h) => (
@@ -567,10 +629,18 @@ export default function TeachingMap({
                   <span>추론 단서 {i + 1}</span>
                   <strong>{r.title}</strong>
                   {stage === 2 && (
-                    <p>
-                      <em>입지 해석</em>
-                      {r.detail}
-                    </p>
+                    <>
+                      <p>
+                        <em>입지 해석</em>
+                        {splitExplanation(r.detail)[0]}
+                      </p>
+                      {splitExplanation(r.detail)[1] && (
+                        <details className="clue-more">
+                          <summary>보충 설명</summary>
+                          <p>{splitExplanation(r.detail)[1]}</p>
+                        </details>
+                      )}
+                    </>
                   )}
                 </article>
               ))}
@@ -644,7 +714,7 @@ export default function TeachingMap({
               </Button>
             ) : (
               <Button onClick={visitComparison}>
-                다른 거점 보기
+                {shortName(second.name)}로 이동
                 <ArrowRight />
               </Button>
             )}
@@ -727,10 +797,15 @@ export default function TeachingMap({
                     <li key={r.title}>{r.title}</li>
                   ))}
                 </ul>
-                <p>
-                  ① 예상한 기능 (복수 선택 가능): □ 조립·생산 □ 연구개발 □ 부품
-                  생산 □ 자원 채굴 □ 판매·물류 □ 기타 __________
-                </p>
+                <div className="sheet-role-question">
+                  <strong>① 예상한 기능 (복수 선택 가능)</strong>
+                  <div className="sheet-role-options">
+                    {activityRoles.map((role) => (
+                      <span key={role}>□ {role}</span>
+                    ))}
+                    <span>□ 기타</span>
+                  </div>
+                </div>
                 <div className="sheet-lines">
                   ② 이 지역은 ____________________하므로, 기업이
                   ____________________하는 데 유리하다.
@@ -742,12 +817,9 @@ export default function TeachingMap({
               </article>
             ))}
             <h2>두 지역의 기능을 연결해 정리해 봅시다.</h2>
-            <p>{connectionQuestion} 두 지역의 기능을 근거로 설명해 보세요.</p>
-            <div className="sheet-lines tall">
-              기업은 ____________________에서는 ____________________을/를,
-              ____________________에서는 ____________________을/를 맡기고, 이
-              기능들을
-            </div>
+            <p className="sheet-final-question">{connectionQuestion}</p>
+            <p>두 지역의 기능을 근거로 2~3문장으로 설명해 보세요.</p>
+            <div className="sheet-write-lines" aria-label="서술 답안 작성란" />
             <p className="sheet-foot">
               두 곳의 기능이 비슷하다면 다른 기능을 맡은 거점도 떠올려 보세요.
               국가의 발전 수준만으로 기능을 단정하지 않습니다.

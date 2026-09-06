@@ -32,3 +32,39 @@
 @media screen and (max-width:999px){.teach-workspace,.teach-presenting .teach-workspace{grid-template-columns:1fr}.teach-inquiry-scroll{overflow:visible}.teach-controls{position:sticky;bottom:0;background:#f5f8fd;padding:12px 0;z-index:3}.teach-ppt-panel{right:auto;left:0}.teach-map>svg{height:auto!important}}
 @media print{.teach-shell{display:block;height:auto;overflow:visible}.sheet-paper p,.sheet-lines,.sheet-clues{font-size:10.5pt;line-height:1.5}.sheet-clues{margin:5px 0;padding-left:18px}.sheet-paper article{margin-top:10px;padding-top:4px}.sheet-lines{min-height:38px;padding:6px 0}.sheet-lines.tall{min-height:56px}.sheet-paper h2{margin:10px 0 6px}.sheet-paper h1{margin:5px 0 12px}.sheet-paper p{margin:8px 0}.sheet-foot{font-size:9.5pt!important}}
 .teach-scope{flex:none;padding:7px 9px;border-radius:999px;background:#e7effc;color:#34557f;font-size:12px;font-weight:700}.evidence-status{display:flex;align-items:center;gap:8px;margin:-4px 0 12px}.evidence-status strong{padding:5px 8px;border-radius:999px;background:#e3edf9;color:#164a86;font-size:12px}.evidence-status span{font-size:12px;color:#60738d}.evidence-note{margin:-3px 0 14px;padding:10px 12px;border-left:3px solid #7da4d4;background:#edf4fd;color:#3b5678;font-size:13px;line-height:1.55}.teach-answer small{display:block;margin-top:7px;color:#536981;font-size:12px;line-height:1.5}.teach-clues p em{display:block;margin-bottom:5px;color:#1d4ed8;font-size:12px;font-style:normal;font-weight:800}.compare-prompt{margin-top:14px;padding:14px;border-radius:10px;background:#142c51;color:white}.compare-prompt span{display:block;margin-bottom:6px;color:#9fc4ff;font-size:12px;font-weight:800}.compare-prompt strong{font-size:15px;line-height:1.6}.perspective-prompt{margin-top:10px;padding:12px 14px;border:1px solid #cddbef;border-radius:10px;background:white}.perspective-prompt summary{cursor:pointer;color:#264b79;font-size:13px;font-weight:800}.perspective-prompt p{margin:9px 0 0;color:#465f7f;font-size:13px;line-height:1.55}.source-links{display:grid;gap:5px;margin:12px 0 4px}.source-links span{color:#60738d;font-size:12px;font-weight:700}.source-links a{color:#1d4ed8;font-size:12px;text-decoration:underline;text-underline-offset:2px}
+
+/* Classroom readability pass */
+.teach-hubs .hub-index{margin-right:8px;opacity:.72}
+.teach-hubs .hub-seen{margin:0 0 0 8px;padding:2px 6px;border-radius:999px;background:#e7effc;color:#1d4ed8;font-size:12px;font-weight:800;opacity:1}
+.teach-hubs button[aria-pressed=true] .hub-seen{background:#fff;color:#1d4ed8}
+.teach-steps{align-items:center;gap:0}
+.teach-steps span{position:relative;border-radius:0;background:transparent;padding:6px 10px;border-bottom:3px solid #d6e0ee;color:#64748b;font-size:14px}
+.teach-steps span:first-child{padding-left:0}
+.teach-steps [aria-current]{background:transparent;color:#1d4ed8;border-bottom-color:#2563eb;font-weight:800}
+.clue-more{margin-top:8px;border-top:1px dashed #c7d5e8;padding-top:6px}
+.clue-more summary{cursor:pointer;color:#476484;font-size:14px;font-weight:700}
+.clue-more p{margin:6px 0 0!important;font-size:14px!important;line-height:1.55!important}
+.teach-connection{border-top:2px solid #9ebee8;background:#edf4ff}
+.teach-connection>p{font-size:20px;line-height:1.5;margin:12px 0 8px}
+.teach-connection summary{font-size:16px;line-height:1.5}
+.teach-connection details[open]{margin-top:8px;padding:12px 14px;border-radius:10px;background:#fff;border:1px solid #c6d8ef}
+.teach-connection details p{font-size:20px;line-height:1.55;color:#142c51;font-weight:650}
+.teach-controls>button:first-child{min-width:0;white-space:normal;line-height:1.35}
+.sheet-role-question{font-size:14px;line-height:1.6;margin:10px 0}
+.sheet-role-question>strong{display:block;margin-bottom:6px}
+.sheet-role-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px 14px}
+.sheet-role-options span{white-space:nowrap}
+.sheet-final-question{font-size:16px!important;font-weight:800;line-height:1.55!important;margin-bottom:2px!important}
+.sheet-write-lines{height:88px;margin-top:8px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,#a9bcd6 28px,#a9bcd6 29px)}
+@media screen and (min-width:1000px){
+  .teach-presenting .teach-connection>p{font-size:24px}
+  .teach-presenting .teach-connection summary{font-size:18px}
+  .teach-presenting .teach-connection details p{font-size:23px}
+}
+@media screen and (max-width:720px){.sheet-role-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{
+  .sheet-role-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 10px}
+  .sheet-role-question{font-size:10.5pt;line-height:1.4;margin:5px 0}
+  .sheet-write-lines{height:58px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 18px,#a9bcd6 19px,#a9bcd6 20px)}
+  .sheet-final-question{font-size:11pt!important;margin:8px 0 2px!important}
+}

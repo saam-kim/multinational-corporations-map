@@ -24,3 +24,10 @@ export const connectionQuestion =
   '이 사례가 단순한 해외 진출을 넘어 공간적 분업에 해당하는 이유는 무엇일까요?';
 export const connectionConcept =
   '공간적 분업은 기업 활동의 여러 기능을 지역별로 나누어 배치하고 연결하는 것입니다. 지역의 조건을 활용하되, 한 지역이 여러 기능을 맡을 수도 있습니다.';
+
+export function splitExplanation(detail: string): [string, string] {
+  const end = detail.indexOf('다.');
+  return end > -1 && end + 2 < detail.length
+    ? [detail.slice(0, end + 2), detail.slice(end + 2).trim()]
+    : [detail, ''];
+}
